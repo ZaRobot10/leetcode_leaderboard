@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        table {
+            font-family: Arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <h1>Mac LeetCode LeaderBoard</h1>
+
+    <table id="leaderboard">
+        <thead>
+            <tr>
+                <th>Sno</th>
+                <th>Username</th>
+                <th>Easy</th>
+                <th>Medium</th>
+                <th>Hard</th>
+                <th>Total</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% user_solved.forEach(function(user, index) { %>
+                <tr>
+                    <td><%= index + 1 %></td>
+                    <td><a href="https://leetcode.com/<%= user.name %>"><%= user.name %></a></td>
+                    <td><%= user.easy %></td>
+                    <td><%= user.medium %></td>
+                    <td><%= user.hard %></td>
+                    <td><%= user.total %></td>
+                    <td><%= user.points %></td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+   
+</body>
+</html>
