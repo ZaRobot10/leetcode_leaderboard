@@ -17,33 +17,6 @@ app.use(express.static('public'));
 
 var userNames = ['kalpit04', '_Code_Shark', '8178458001' , 'za_robot10', 'dsharma02102004', 'varun9904', 'krishankant_nsut', 'D-01000100'];
 
-var user_solved = [];
-
-for (var i = 0; i < userNames.length; i++) {
-    var result =  await leetcode.user(userNames[i]);
-   
-
-
-    var user = {
-        name: userNames[i],
-        easy: result.matchedUser.submitStats.acSubmissionNum[1].count,
-        medium: result.matchedUser.submitStats.acSubmissionNum[2].count,
-        hard: result.matchedUser.submitStats.acSubmissionNum[3].count,
-        total: result.matchedUser.submitStats.acSubmissionNum[0].count,
-        points : result.matchedUser.submitStats.acSubmissionNum[1].count + 2 * result.matchedUser.submitStats.acSubmissionNum[2].count + 4 * result.matchedUser.submitStats.acSubmissionNum[3].count
-    }
-
-
-    console.log(user);
-
-    user_solved.push(user);
-}
-
-
-// sort the user_solved array in descending order of points
-user_solved.sort(function(a, b) {
-    return b.points - a.points;
-});
 
 
 app.get('/', async(req, res) => {
@@ -65,6 +38,26 @@ app.get('/', async(req, res) => {
 
        
     // }
+        var user_solved = [];
+
+for (var i = 0; i < userNames.length; i++) {
+    var result =  await leetcode.user(userNames[i]);
+   
+
+
+    var user = {
+        name: userNames[i],
+        easy: result.matchedUser.submitStats.acSubmissionNum[1].count,
+        medium: result.matchedUser.submitStats.acSubmissionNum[2].count,
+        hard: result.matchedUser.submitStats.acSubmissionNum[3].count,
+        total: result.matchedUser.submitStats.acSubmissionNum[0].count,
+        points : result.matchedUser.submitStats.acSubmissionNum[1].count + 2 * result.matchedUser.submitStats.acSubmissionNum[2].count + 4 * result.matchedUser.submitStats.acSubmissionNum[3].count
+    }
+
+
+    console.log(user);
+
+    user_solved.push(user);
    
 
        res.render('index.ejs', { user_solved: user_solved });
