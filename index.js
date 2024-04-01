@@ -38,7 +38,7 @@ app.get('/', async(req, res) => {
 
        
     // }
-        var user_solved = [];
+ var user_solved = [];
 
 for (var i = 0; i < userNames.length; i++) {
     var result =  await leetcode.user(userNames[i]);
@@ -58,6 +58,13 @@ for (var i = 0; i < userNames.length; i++) {
     console.log(user);
 
     user_solved.push(user);
+}
+
+
+// sort the user_solved array in descending order of points
+user_solved.sort(function(a, b) {
+    return b.points - a.points;
+});
    
 
        res.render('index.ejs', { user_solved: user_solved });
