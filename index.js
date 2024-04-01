@@ -67,7 +67,7 @@ app.get('/', async(req, res) => {
     // }
    
 
-    res.send("Hello World");
+       res.render('index.ejs', { user_solved: user_solved });
 });
 
 
