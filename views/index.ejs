@@ -25,6 +25,11 @@
 <body>
     <h1>Mac LeetCode LeaderBoard</h1>
 
+    <div>
+        <button onclick="showOverall()">Overall</button>
+        <button onclick="showWeekly()">Weekly</button>
+    </div>
+
     <table id="leaderboard">
         <thead>
             <tr>
@@ -42,16 +47,97 @@
                 <tr>
                     <td><%= index + 1 %></td>
                     <td><a href="https://leetcode.com/<%= user.name %>"><%= user.name %></a></td>
-                    <td><%= user.easy %></td>
-                    <td><%= user.medium %></td>
-                    <td><%= user.hard %></td>
-                    <td><%= user.total %></td>
-                    <td><%= user.points %></td>
+                    <td><span id="easy_<%= index %>"><%= user.easy %></span></td>
+                    <td><span id="medium_<%= index %>"><%= user.medium %></span></td>
+                    <td><span id="hard_<%= index %>"><%= user.hard %></span></td>
+                    <td><span id="total_<%= index %>"><%= user.total %></span></td>
+                    <td><span id="points_<%= index %>"><%= user.points %></span></td>
                 </tr>
             <% }); %>
         </tbody>
     </table>
+    <script>
+        var userSolvedData = JSON.parse('<%- JSON.stringify(user_solved) %>');
+    
+        function updateSerialNumbers() {
+            var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            for (var i = 0; i < rows.length; i++) {
+                rows[i].getElementsByTagName("td")[0].innerText = i + 1; // Update serial number
+            }
+        }
+    
+        function showOverall() {
+            var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName("td");
+                // Update values for overall view
 
-   
+                // update name
+                cells[1].innerHTML = `<a href="https://leetcode.com/${userSolvedData[i].name}">${userSolvedData[i].name}</a>`;
+                cells[2].innerText = userSolvedData[i].easy; // Easy
+                cells[3].innerText = userSolvedData[i].medium; // Medium
+                cells[4].innerText = userSolvedData[i].hard; // Hard
+                cells[5].innerText = userSolvedData[i].total; // Total
+                cells[6].innerText = userSolvedData[i].points; // Points
+            }
+    
+            updateSerialNumbers(); // Update serial numbers after updating overall view
+        }
+    
+        function showWeekly() {
+    var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    var modifiedUserSolvedData = [];
+
+    for (var i = 0; i < rows.length; i++) {
+        var cells = rows[i].getElementsByTagName("td");
+        // Calculate modified values for weekly view
+        var modifiedEasy = userSolvedData[i].easy - userSolvedData[i].problems[1];
+        var modifiedMedium = userSolvedData[i].medium - userSolvedData[i].problems[2];
+        var modifiedHard = userSolvedData[i].hard - userSolvedData[i].problems[3];
+        var modifiedTotal = userSolvedData[i].total - userSolvedData[i].problems[0];
+        var modifiedPoints = modifiedEasy + 2 * modifiedMedium + 4 * modifiedHard;
+
+        // Create an object with modified values
+        var modifiedUser = {
+            name: userSolvedData[i].name,
+            easy: modifiedEasy,
+            medium: modifiedMedium,
+            hard: modifiedHard,
+            total: modifiedTotal,
+            points: modifiedPoints
+        };
+
+        // Add the modified object to the new array
+        modifiedUserSolvedData.push(modifiedUser);
+
+
+    }
+
+    // Sort the modifiedUserSolvedData according to the points
+    
+    modifiedUserSolvedData.sort(function(a, b) {
+        return b.points - a.points;
+    });
+
+
+    for (var i = 0; i < rows.length; i++) {
+        var cells = rows[i].getElementsByTagName("td");
+        // Update values for weekly view
+        // update name with modifiedUserSolvedData
+
+        cells[1].innerHTML = `<a href="https://leetcode.com/${modifiedUserSolvedData[i].name}">${modifiedUserSolvedData[i].name}</a>`;
+        cells[2].innerText = modifiedUserSolvedData[i].easy; // Easy
+        cells[3].innerText = modifiedUserSolvedData[i].medium; // Medium
+        cells[4].innerText = modifiedUserSolvedData[i].hard; // Hard
+        cells[5].innerText = modifiedUserSolvedData[i].total; // Total
+        cells[6].innerText = modifiedUserSolvedData[i].points; // Points
+    }
+
+    
+}
+
+    </script>
+    
+    
 </body>
 </html>
