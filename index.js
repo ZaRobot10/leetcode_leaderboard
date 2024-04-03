@@ -160,6 +160,9 @@ app.get('/', async (req, res) => {
         }
 
                user_solved.sort((a, b) => b.points - a.points);
+        
+
+        console.log('User data fetched successfully.');
 
         res.render('index', { user_solved });
     } 
