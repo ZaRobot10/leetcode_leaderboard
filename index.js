@@ -17,7 +17,7 @@ const uri = process.env.MONGODB_URI;
 app.use(express.static('public'));
 
 app.set('view engine', 'ejs');
-
+var count = 0;
 
 var userNames = [
     { user: 'kalpit04', problems: [5, 1, 2, 2] },
@@ -106,8 +106,9 @@ async function insertWeeklyRecords(userNames) {
 
 app.get('/', async (req, res) => {
 
-
-        console.log('Fetching user data...');
+    console.log(`[${new Date().toISOString()}] Request from ${req.ip}: ${req.method} ${req.url}`);
+        count++;
+        console.log(count + '. Fetching user data...');
 
     try { 
         
@@ -147,7 +148,8 @@ app.get('/', async (req, res) => {
 
 
 
-            }insertWeeklyRecords(userNames);
+            }
+            insertWeeklyRecords(userNames);
 
             
            
@@ -156,7 +158,8 @@ app.get('/', async (req, res) => {
                user_solved.sort((a, b) => b.points - a.points);
 
         res.render('index', { user_solved });
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error fetching user data:', error);
         res.status(500).send('Internal Server Error');
     }
@@ -185,6 +188,5 @@ app.listen(port, () => {
 
     console.log(`Server is running on port http://localhost:${port}`);
 });
-
 
 
