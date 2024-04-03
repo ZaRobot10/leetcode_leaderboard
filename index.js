@@ -30,11 +30,12 @@ var userNames = [
     { user: 'D-01000100', problems: [5, 1, 2, 2] },
     { user: 's1marjeet_singh', problems: [5, 1, 2, 2] },
     { user: 'aadichachra', problems: [5, 1, 2, 2] },
-    { user: 'pranay_nsut8', problems: [5, 1, 2, 2] },
+    { user: 'pranay_nsut8', problems: [5, 1, 2, 2] }
     
 ];
 
 var previousDate =  "2024-3-25";
+
 
 async function updateProblemsAndDateInUserNames(userNames) {
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -72,7 +73,9 @@ async function updateProblemsAndDateInUserNames(userNames) {
     }
 }
 
-updateProblemsAndDateInUserNames(userNames);
+await updateProblemsAndDateInUserNames(userNames);
+
+
 
 async function insertWeeklyRecords(userNames) {
     
@@ -150,7 +153,7 @@ app.get('/', async (req, res) => {
 
 
             }
-            insertWeeklyRecords(userNames);
+            await insertWeeklyRecords(userNames);
 
             
            
