@@ -3,15 +3,25 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import { LeetCode } from "leetcode-query";
 import { MongoClient, ServerApiVersion } from 'mongodb';
+import rateLimit from 'express-rate-limit';
 
-const leetcode = new LeetCode();
+
 
 dotenv.config(); // Load environment variables from .env file
 const app = express();
 const port = 3000;
 const uri = process.env.MONGODB_URI;
+const leetcode = new LeetCode();
 
 
+// Rate limiting middleware
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+  });
+  
+  // Apply rate limiter to all requests
+  app.use(limiter);
 
 // middleware
 app.use(express.static('public'));
