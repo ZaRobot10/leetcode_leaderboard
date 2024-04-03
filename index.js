@@ -1,13 +1,16 @@
 import express from 'express';
 import axios from 'axios';
-
+import dotenv from 'dotenv';
 import { LeetCode } from "leetcode-query";
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
 const leetcode = new LeetCode();
 
-
+dotenv.config(); // Load environment variables from .env file
 const app = express();
 const port = 3000;
+const uri = process.env.MONGODB_URI;
+
 
 
 // middleware
@@ -25,10 +28,81 @@ var userNames = [
     { user: 'varun9904', problems: [5, 1, 2, 2] },
     { user: 'krishankant_nsut', problems: [5, 1, 2, 2] },
     { user: 'D-01000100', problems: [5, 1, 2, 2] },
-    { user: 's1marjeet_singh', problems: [5, 1, 2, 2] }
+    { user: 's1marjeet_singh', problems: [5, 1, 2, 2] },
+    { user: 'aadichachra', problems: [5, 1, 2, 2] },
+    
 ];
 
 var previousDate =  "2024-3-25";
+
+async function updateProblemsAndDateInUserNames(userNames) {
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+  
+    try {
+        await client.connect();
+        console.log("Connected to MongoDB");
+    
+        const database = client.db("leaderboard");
+        const weeklyRecordsCollection = database.collection("weekly_records");
+    
+        for (let i = 0; i < userNames.length; i++) {
+            const { user } = userNames[i];
+            const record = await weeklyRecordsCollection.findOne({ user }); // Find record by user
+            if (record) {
+                // If record found, update problems array in userNames
+                userNames[i].problems = record.problems;
+                // Update previousDate with date from database record
+
+                if (i == 0)
+                {
+                    previousDate = record.date;
+                }
+                
+            } else {
+                console.log(`Record for user ${user} not found.`);
+            }
+        }
+    
+        console.log("Updated userNames array with problems and previousDate from database.");
+    } catch (error) {
+        console.error("Error updating userNames array:", error);
+    } finally {
+        await client.close();
+    }
+}
+
+updateProblemsAndDateInUserNames(userNames);
+
+async function insertWeeklyRecords(userNames) {
+    
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+  
+    try {
+      await client.connect();
+      console.log("Connected to MongoDB");
+  
+      const database = client.db("leaderboard");
+      const weeklyRecordsCollection = database.collection("weekly_records");
+
+      // Delete existing records
+      const deleteResult = await weeklyRecordsCollection.deleteMany({});
+  
+      // Insert new records
+      for (let i = 0; i < userNames.length; i++) {
+        const { user, problems } = userNames[i];
+        const date = new Date(); // Get current date
+        await weeklyRecordsCollection.insertOne({ id: i + 1, user, problems, date });
+      }
+  
+      console.log(`${userNames.length} records inserted successfully.`);
+    } catch (error) {
+      console.error("Error inserting records:", error);
+    } finally {
+      await client.close();
+    }
+}
+
+
 
 app.get('/', async (req, res) => {
 
@@ -63,6 +137,8 @@ app.get('/', async (req, res) => {
             // Update prev with today's date
             previousDate = currentDate.toISOString().slice(0, 10);
 
+            
+
             // update problems inside user_names with the new data && update the problems in userNames
 
             for (var i = 0; i < user_solved.length; i++) {
@@ -71,7 +147,7 @@ app.get('/', async (req, res) => {
 
 
 
-            }
+            }insertWeeklyRecords(userNames);
 
             
            
@@ -89,7 +165,7 @@ app.get('/', async (req, res) => {
 async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
 
-    console.log(result);
+    // console.log(result);
     const user = {
         name: username,
         easy: result.matchedUser.submitStats.acSubmissionNum[1].count,
