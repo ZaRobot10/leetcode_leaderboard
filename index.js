@@ -40,7 +40,9 @@ var userNames = [
     { user: 'D-01000100', problems: [5, 1, 2, 2] },
     { user: 's1marjeet_singh', problems: [5, 1, 2, 2] },
     { user: 'aadichachra', problems: [5, 1, 2, 2] },
-    { user: 'pranay_nsut8', problems: [5, 1, 2, 2] }
+    { user: 'pranay_nsut8', problems: [5, 1, 2, 2] },
+    { user: 'ananyak84', problems: [5, 1, 2, 2] },
+    { user: 'harshitchawla335', problems: [5, 1, 2, 2] }
     
 ];
 
