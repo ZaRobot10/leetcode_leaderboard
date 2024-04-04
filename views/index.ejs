@@ -28,6 +28,8 @@
     <div>
         <button onclick="showOverall()">Overall</button>
         <button onclick="showWeekly()">Weekly</button>
+        <button onclick="showRecentSubmissions()">Recent Submissions</button>
+        
     </div>
 
     <table id="leaderboard">
@@ -56,6 +58,36 @@
             <% }); %>
         </tbody>
     </table>
+
+    <table id="recentSubmissionsTable" style="display: none;">
+        <thead>
+            <tr>
+                <th>Sno</th>
+                <th>Username</th>
+                <th>Time</th>
+                <th>Problem</th>
+                <th>Verdict</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% var serialNumber = 1; %>
+            <% submissions.forEach(function(submission) { %>
+                <% if (serialNumber <= 200) { %>
+                    <tr>
+                        <td><%= serialNumber++ %></td>
+                        <td><a href="https://leetcode.com/<%= submission.user %>"><%= submission.user %></a></td>
+                        <td><%= submission.time %></td>
+                        <td><a href="https://leetcode.com/problems/<%= submission.titleSlug %>"><%= submission.title %></a></td>
+                        <td><%= submission.statusDisplay %></td>
+                    </tr>
+                <% } else { %>
+                    <% return; // Break out of the loop %>
+                <% } %>
+            <% }); %>
+            
+
+        </tbody>
+    </table>
     <script>
         var userSolvedData = JSON.parse('<%- JSON.stringify(user_solved) %>');
     
@@ -67,6 +99,9 @@
         }
     
         function showOverall() {
+
+            document.getElementById("leaderboard").style.display = "table";
+            document.getElementById("recentSubmissionsTable").style.display = "none";
             var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             for (var i = 0; i < rows.length; i++) {
                 var cells = rows[i].getElementsByTagName("td");
@@ -83,8 +118,14 @@
     
             updateSerialNumbers(); // Update serial numbers after updating overall view
         }
+
+
+
     
         function showWeekly() {
+
+            document.getElementById("leaderboard").style.display = "table";
+            document.getElementById("recentSubmissionsTable").style.display = "none";
     var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
     var modifiedUserSolvedData = [];
 
@@ -134,6 +175,11 @@
     }
 
     
+}
+
+function showRecentSubmissions() {
+    document.getElementById("leaderboard").style.display = "none";
+    document.getElementById("recentSubmissionsTable").style.display = "table";
 }
 
     </script>
