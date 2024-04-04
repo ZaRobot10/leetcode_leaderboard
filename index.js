@@ -17,7 +17,7 @@ const leetcode = new LeetCode();
 // Rate limiting middleware
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    max: 50, // limit each IP to 100 requests per windowMs
   });
   
   // Apply rate limiter to all requests
@@ -42,9 +42,12 @@ var userNames = [
     { user: 'aadichachra', problems: [5, 1, 2, 2] },
     { user: 'pranay_nsut8', problems: [5, 1, 2, 2] },
     { user: 'ananyak84', problems: [5, 1, 2, 2] },
-    { user: 'harshitchawla335', problems: [5, 1, 2, 2] }
+    { user: 'harshitchawla335', problems: [5, 1, 2, 2] },
+    { user: 'madhurbakshi', problems: [5, 1, 2, 2] }
     
 ];
+
+var submissons = [];
 
 var previousDate =  "2024-3-25";
 
@@ -119,6 +122,44 @@ async function insertWeeklyRecords(userNames) {
 }
 
 
+function unixTimeToNormal(unixTime) {
+    // Convert Unix time (seconds since the Unix epoch) to milliseconds
+    const milliseconds = unixTime * 1000;
+  
+    // Create a new Date object using the milliseconds
+    const dateObject = new Date(milliseconds);
+  
+    // Extract the components of the date
+    const year = dateObject.getFullYear();
+    const month = ('0' + (dateObject.getMonth() + 1)).slice(-2); // Months are zero-based
+    const day = ('0' + dateObject.getDate()).slice(-2);
+    let hours = dateObject.getHours();
+    const minutes = ('0' + dateObject.getMinutes()).slice(-2);
+    const seconds = ('0' + dateObject.getSeconds()).slice(-2);
+    let period = 'AM';
+  
+    // Convert hours to 12-hour clock format and determine AM/PM
+    if (hours > 12) {
+      hours -= 12;
+      period = 'PM';
+    }
+  
+    // Handle midnight (00:00) and noon (12:00)
+    if (hours === 0) {
+      hours = 12;
+    }
+  
+    // Construct the human-readable date and time format
+    const normalTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${period}`;
+  
+    return normalTime;
+  }
+  
+  // Example usage:
+  const unixTimestamp = 1712161200; // Unix timestamp (seconds since epoch)
+  const normalTime = unixTimeToNormal(unixTimestamp);
+  console.log(normalTime); // Output: 2021-03-31 12:00:00 AM
+  
 
 app.get('/', async (req, res) => {
 
@@ -128,7 +169,7 @@ app.get('/', async (req, res) => {
 
     try { 
         
-        
+        submissons = [];
         const user_solved = await Promise.all(userNames.map(username => fetchUserData(username.user, username.problems)));
 
         // Sort the user_solved array in descending order of points
@@ -172,11 +213,13 @@ app.get('/', async (req, res) => {
         }
 
                user_solved.sort((a, b) => b.points - a.points);
+               submissons.sort((a, b) => b.timestamp - a.timestamp);
+
         
 
         console.log('User data fetched successfully.');
 
-        res.render('index', { user_solved });
+        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate});
     } 
     catch (error) {
         console.error('Error fetching user data:', error);
@@ -186,6 +229,8 @@ app.get('/', async (req, res) => {
 
 async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
+
+    console.log(result);
 
     // console.log(result);
     const user = {
@@ -199,6 +244,26 @@ async function fetchUserData(username, problems) {
                 4 * result.matchedUser.submitStats.acSubmissionNum[3].count,
         problems: problems
     };
+
+    for (var i = 0; i < result.recentSubmissionList.length; i++) {
+        const submissonsData = {
+            user: username,
+            title: result.recentSubmissionList[i].title,
+            titleSlug: result.recentSubmissionList[i].titleSlug,
+            statusDisplay: result.recentSubmissionList[i].statusDisplay,
+            timestamp: result.recentSubmissionList[i].timestamp,
+            time : unixTimeToNormal(result.recentSubmissionList[i].timestamp)
+        };
+
+        if (username != 'za_robot10')
+        {
+            submissons.push(submissonsData);
+        
+        }
+
+        
+    }
+
     return user;
 }
 
@@ -209,3 +274,31 @@ app.listen(port, () => {
 });
 
 
+// async function insertOneRecord() {
+//     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+//     try {
+//         await client.connect();
+//         console.log("Connected to MongoDB");
+
+//         const database = client.db("leaderboard");
+//         const weeklyRecordsCollection = database.collection("weekly_records");
+
+//         const record = {
+//             id: 14,
+//             user: "madhurbakshi",
+//             problems: [182, 70, 94, 18],
+//             date: new Date() // Add the current date
+//         };
+
+//         await weeklyRecordsCollection.insertOne(record);
+
+//         console.log("Record inserted successfully:", record);
+//     } catch (error) {
+//         console.error("Error inserting record:", error);
+//     } finally {
+//         await client.close();
+//     }
+// }
+
+// insertOneRecord();
