@@ -230,7 +230,7 @@ app.get('/', async (req, res) => {
 async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
 
-    console.log(result);
+    
 
     // console.log(result);
     const user = {
