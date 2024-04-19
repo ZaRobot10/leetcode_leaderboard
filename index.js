@@ -13,6 +13,8 @@ const port = 3000;
 const uri = process.env.MONGODB_URI;
 const leetcode = new LeetCode();
 
+// Trust proxy headers
+app.set('trust proxy', true);
 
 // Rate limiting middleware
 const limiter = rateLimit({
@@ -23,6 +25,13 @@ const limiter = rateLimit({
   // Apply rate limiter to all requests
   app.use(limiter);
 
+  // Custom middleware to log blocked IP addresses
+app.use((req, res, next) => {
+    if (req.rateLimit && req.rateLimit.remaining === 0) {
+        console.log(`IP Address ${req.ip} is blocked due to rate limiting.`);
+    }
+    next();
+});
 // middleware
 app.use(express.static('public'));
 
@@ -125,35 +134,40 @@ async function insertWeeklyRecords(userNames) {
 function unixTimeToNormal(unixTime) {
     // Convert Unix time (seconds since the Unix epoch) to milliseconds
     const milliseconds = unixTime * 1000;
-  
+
     // Create a new Date object using the milliseconds
     const dateObject = new Date(milliseconds);
-  
+
+    // Adjust time for IST (UTC+5:30)
+    const ISTOffset = 330 * 60000; // 5.5 hours in milliseconds
+    const ISTTime = new Date(dateObject.getTime() + ISTOffset);
+
     // Extract the components of the date
-    const year = dateObject.getFullYear();
-    const month = ('0' + (dateObject.getMonth() + 1)).slice(-2); // Months are zero-based
-    const day = ('0' + dateObject.getDate()).slice(-2);
-    let hours = dateObject.getHours();
-    const minutes = ('0' + dateObject.getMinutes()).slice(-2);
-    const seconds = ('0' + dateObject.getSeconds()).slice(-2);
+    const year = ISTTime.getFullYear();
+    const month = ('0' + (ISTTime.getMonth() + 1)).slice(-2); // Months are zero-based
+    const day = ('0' + ISTTime.getDate()).slice(-2);
+    let hours = ISTTime.getHours();
+    const minutes = ('0' + ISTTime.getMinutes()).slice(-2);
+    const seconds = ('0' + ISTTime.getSeconds()).slice(-2);
     let period = 'AM';
-  
+
     // Convert hours to 12-hour clock format and determine AM/PM
+    if (hours >= 12) {
+        period = 'PM';
+    }
     if (hours > 12) {
-      hours -= 12;
-      period = 'PM';
+        hours -= 12;
     }
-  
-    // Handle midnight (00:00) and noon (12:00)
     if (hours === 0) {
-      hours = 12;
+        hours = 12;
     }
-  
+
     // Construct the human-readable date and time format
     const normalTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${period}`;
-  
+
     return normalTime;
-  }
+}
+
   
   // Example usage:
   const unixTimestamp = 1712161200; // Unix timestamp (seconds since epoch)
@@ -211,7 +225,6 @@ app.get('/', async (req, res) => {
             
            
         }
-
                user_solved.sort((a, b) => b.points - a.points);
                submissons.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -227,10 +240,11 @@ app.get('/', async (req, res) => {
     }
 });
 
+
 async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
 
-    
+    // console.log(result);
 
     // console.log(result);
     const user = {
