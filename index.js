@@ -4,8 +4,10 @@ import dotenv from 'dotenv';
 import { LeetCode } from "leetcode-query";
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import rateLimit from 'express-rate-limit';
-
-
+import puppeteer from 'puppeteer';
+import { Octokit } from '@octokit/rest';
+import fs from 'fs';
+import moment from 'moment';
 
 dotenv.config(); // Load environment variables from .env file
 const app = express();
@@ -38,6 +40,8 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 var count = 0;
 
+var flag = true;
+
 var userNames = [
     { user: 'kalpit04', problems: [5, 1, 2, 2] },
     { user: '_Code_Shark', problems: [5, 1, 2, 2] },
@@ -59,6 +63,67 @@ var userNames = [
 var submissons = [];
 
 var previousDate =  "2024-3-25";
+
+
+
+
+// Function to capture screenshot after clicking the "Weekly" button and push it to GitHub
+async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken) {
+    // Launch headless browser
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    try {
+        // Navigate to the URL
+        await page.goto(url, { waitUntil: 'networkidle2' });
+
+        // Click the "Weekly" button using evaluate
+        await page.evaluate(() => {
+            document.getElementById('weekly').click();
+        });
+
+        // Wait for the content to load after clicking the button
+        await page.waitForSelector('#leaderboard tbody tr', { timeout: 10000 }); // Adjust the selector as needed
+
+        // Capture screenshot
+
+        await page.screenshot({ path: outputPath });
+
+        console.log('Screenshot captured successfully after clicking the "Weekly" button!');
+
+        const currentYear = moment().isoWeekYear(); // Get the current ISO week year
+        const currentWeek = moment().isoWeek(); // Get the current ISO week number
+        const outputPath_github = `${currentYear}_week${currentWeek}.png`; // Path for the screenshot using current year and week number
+
+        // Push the screenshot to GitHub repository
+        const octokit = new Octokit({ auth: accessToken });
+        const fileContent = fs.readFileSync(outputPath);
+        await octokit.repos.createOrUpdateFileContents({
+            owner: repositoryOwner,
+            repo: repositoryName,
+            path: `screenshots/${outputPath_github}`, // Path where the screenshot will be stored in the repository
+            message: commitMessage,
+            content: fileContent.toString('base64'),
+            branch: 'main' // Replace with the target branch
+        });
+
+        console.log('Screenshot pushed to GitHub successfully!');
+    } catch (error) {
+        console.error('Error capturing screenshot after clicking the "Weekly" button or pushing to GitHub:', error);
+    } finally {
+        // Close the browser
+        await browser.close();
+    }
+}
+
+// Example usage
+const url = 'https://leetcode-leaderboard-fj91.onrender.com/'; // Replace with your website's URL
+const outputPath = 'weekly_standings_screenshot.png'; // Path to save the screenshot
+const repositoryOwner = 'ZaRobot10'; // Replace with your GitHub username or organization name
+const repositoryName = 'leetcode_leaderboard'; // Replace with your GitHub repository name
+const commitMessage = 'Add weekly standings screenshot'; // Commit message
+const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHub personal access token
+
 
 
 async function updateProblemsAndDateInUserNames(userNames) {
@@ -209,7 +274,7 @@ app.get('/', async (req, res) => {
             // Update prev with today's date
             previousDate = currentDate.toISOString().slice(0, 10);
 
-            
+            await captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken);
 
             // update problems inside user_names with the new data && update the problems in userNames
 
@@ -221,6 +286,7 @@ app.get('/', async (req, res) => {
 
             }
             await insertWeeklyRecords(userNames);
+            
 
             
            
@@ -231,7 +297,13 @@ app.get('/', async (req, res) => {
         
 
         console.log('User data fetched successfully.');
-
+        
+        if (flag)
+        {
+            flag = false;
+            await captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken);
+        }
+        
         res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate});
     } 
     catch (error) {
