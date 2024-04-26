@@ -11,12 +11,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@octokit/rest": "^20.1.0",
     "axios": "^1.6.8",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.9",
     "express": "^4.19.2",
     "express-rate-limit": "^7.2.0",
     "leetcode-query": "^1.2.3",
-    "mongodb": "^6.5.0"
+    "mongodb": "^6.5.0",
+    "puppeteer": "^22.7.1"
   }
 }
