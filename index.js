@@ -70,7 +70,18 @@ var previousDate =  "2024-3-25";
 // Function to capture screenshot after clicking the "Weekly" button and push it to GitHub
 async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken) {
     // Launch headless browser
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        args: [
+          "--disable-setuid-sandbox",
+          "--no-sandbox",
+          "--single-process",
+          "--no-zygote",
+        ],
+        executablePath:
+          process.env.NODE_ENV === "production"
+            ? process.env.PUPPETEER_EXECUTABLE_PATH
+            : puppeteer.executablePath(),
+      });
     const page = await browser.newPage();
 
     try {
