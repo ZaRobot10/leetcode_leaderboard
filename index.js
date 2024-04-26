@@ -78,7 +78,9 @@ async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner
           "--no-zygote",
         ],
         executablePath:
-            puppeteer.executablePath(),
+          process.env.NODE_ENV === "production"
+            ? process.env.PUPPETEER_EXECUTABLE_PATH
+            : puppeteer.executablePath(),
       });
     const page = await browser.newPage();
 
