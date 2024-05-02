@@ -24,6 +24,26 @@ const limiter = rateLimit({
     max: 50, // limit each IP to 100 requests per windowMs
   });
   
+  // Custom middleware to block HEAD requests from localhost if more than 2 requests in 15 minutes
+const customRateLimit = (req, res, next) => {
+    if (req.ip === '::1' && req.method === 'HEAD') {
+        const timeFrame = 15 * 60 * 1000; // 15 minutes
+        const maxRequests = 2; // Maximum allowed requests
+        const requestHistory = req.rateLimit;
+        const requestsInTimeFrame = requestHistory && requestHistory.length ?
+            requestHistory.filter(entry => (Date.now() - entry.time) < timeFrame) :
+            [];
+        
+        if (requestsInTimeFrame.length >= maxRequests) {
+            return res.status(429).send('Too Many Requests');
+        }
+    }
+    next();
+};
+
+    // Apply custom rate limiter middleware to HEAD requests from localhost
+app.use(customRateLimit);
+
   // Apply rate limiter to all requests
   app.use(limiter);
 
@@ -41,6 +61,8 @@ app.set('view engine', 'ejs');
 var count = 0;
 
 var flag = true;
+
+const days = [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 var userNames = [
     { user: 'kalpit04', problems: [5, 1, 2, 2] },
@@ -62,8 +84,7 @@ var userNames = [
 
 var submissons = [];
 
-var previousDate =  "2024-3-25";
-
+var previousDate;
 
 
 
@@ -190,11 +211,15 @@ async function insertWeeklyRecords(userNames) {
 
       // Delete existing records
       const deleteResult = await weeklyRecordsCollection.deleteMany({});
-  
+      
+      // Get current date
+      var date = new Date(previousDate.format());
+      date.setMinutes(date.getMinutes() + 330);
+
       // Insert new records
       for (let i = 0; i < userNames.length; i++) {
         const { user, problems } = userNames[i];
-        const date = new Date(); // Get current date
+        
         await weeklyRecordsCollection.insertOne({ id: i + 1, user, problems, date });
       }
   
@@ -249,8 +274,8 @@ function unixTimeToNormal(unixTime) {
   const unixTimestamp = 1712161200; // Unix timestamp (seconds since epoch)
   const normalTime = unixTimeToNormal(unixTimestamp);
   console.log(normalTime); // Output: 2021-03-31 12:00:00 AM
-  
 
+  
 app.get('/', async (req, res) => {
 
     console.log(`[${new Date().toISOString()}] Request from ${req.ip}: ${req.method} ${req.url}`);
@@ -264,26 +289,42 @@ app.get('/', async (req, res) => {
 
         // Sort the user_solved array in descending order of points
 
-        
-        var currentDate = new Date();console.log(currentDate);
-        var prevDate = new Date(previousDate);
+        var currentDate = moment().utcOffset("+05:30");
+       
+        // Set hours, minutes, and seconds to zero
+        currentDate.hours(0);
+        currentDate.minutes(0);
+        currentDate.seconds(0);
+        currentDate.milliseconds(0);
 
-        currentDate.setHours(0, 0, 0, 0);
-        prevDate.setHours(0, 0, 0, 0);
-
-        var differenceInMilliseconds = currentDate - prevDate;
-
-        // Convert milliseconds to days
-        var differenceInDays = differenceInMilliseconds / (1000 * 3600 * 24);
-        console.log(differenceInDays);
-
-        console.log(prevDate);
         console.log(currentDate);
+
+        
+        
+        previousDate = moment(previousDate);
+        // Set hours, minutes, and seconds to zero
+        previousDate.hours(0);
+        previousDate.minutes(0);
+        previousDate.seconds(0);
+        previousDate.milliseconds(0);
+       
+       
+        // Calculate the difference in days
+        var differenceInDays = currentDate.diff(previousDate, 'days');
+        console.log(differenceInDays);
+        
+        console.log(previousDate);
+
+        
+        var day = days[currentDate.day()];
+        console.log(day);
+       
+       
         
         // Check if the difference is 7 days or more
         if (differenceInDays >= 7) {
             // Update prev with today's date
-            previousDate = currentDate.toISOString().slice(0, 10);
+            previousDate = currentDate;
 
             await captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken);
 
@@ -308,14 +349,7 @@ app.get('/', async (req, res) => {
         
 
         console.log('User data fetched successfully.');
-        
-        if (flag)
-        {
-            flag = false;
-            await captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken);
-        }
-        
-        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate});
+        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day });
     } 
     catch (error) {
         console.error('Error fetching user data:', error);
@@ -381,11 +415,14 @@ app.listen(port, () => {
 //         const database = client.db("leaderboard");
 //         const weeklyRecordsCollection = database.collection("weekly_records");
 
+//         var date = new Date(previousDate.format());
+//         date.setMinutes(date.getMinutes() + 330);
+
 //         const record = {
-//             id: 14,
-//             user: "madhurbakshi",
+//             id: 15,
+//             user: "dabur",
 //             problems: [182, 70, 94, 18],
-//             date: new Date() // Add the current date
+//             date:  date// Add the current date
 //         };
 
 //         await weeklyRecordsCollection.insertOne(record);
