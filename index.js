@@ -295,6 +295,7 @@ app.get('/', async (req, res) => {
         
         
         previousDate = moment(previousDate);
+        previousDate.utcOffset('+05:30');
         console.log(previousDate);
         // Set hours, minutes, and seconds to zero
         previousDate.hours(0);
