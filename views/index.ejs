@@ -18,12 +18,29 @@
         th {
             background-color: #f2f2f2;
         }
+
+       
+        .container {
+        text-align: center;
+        position: relative; /* Add relative positioning */
+
+        .day {
+        font-size: 25px;
+        position: absolute; /* Add absolute positioning */
+        right: 10px; /* Adjust right position */
+        top: 0px;
+    }
+    }
     </style>
 
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <h1>Mac LeetCode LeaderBoard</h1>
+    
+    <div class="container">
+        <h1 class="title">Mac LeetCode LeaderBoard</h1>
+        <span class="day"><%= day %></span>
+    </div>
 
     <div>
         <button onclick="showOverall()">Overall</button>
