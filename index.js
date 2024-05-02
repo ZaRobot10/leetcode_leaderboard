@@ -21,32 +21,24 @@ app.set('trust proxy', true);
 // Rate limiting middleware
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 50, // limit each IP to 100 requests per windowMs
-  });
-  
-  // Custom middleware to block HEAD requests from localhost if more than 2 requests in 15 minutes
+    max: 50, // limit each IP to 50 requests per windowMs
+});
+
+// Custom middleware to block HEAD requests from localhost
 const customRateLimit = (req, res, next) => {
     if (req.ip === '::1' && req.method === 'HEAD') {
-        const timeFrame = 15 * 60 * 1000; // 15 minutes
-        const maxRequests = 2; // Maximum allowed requests
-        const requestHistory = req.rateLimit;
-        const requestsInTimeFrame = requestHistory && requestHistory.length ?
-            requestHistory.filter(entry => (Date.now() - entry.time) < timeFrame) :
-            [];
-        
-        if (requestsInTimeFrame.length >= maxRequests) {
-            return res.status(429).send('Too Many Requests');
-        }
+        // If the request is a HEAD request from localhost, send a 403 Forbidden response
+        return res.status(403).send('Forbidden');
     }
+    // If the request is not a HEAD request from localhost, allow it to proceed
     next();
 };
 
-    // Apply custom rate limiter middleware to HEAD requests from localhost
+// Apply custom rate limiter middleware to HEAD requests from localhost
 app.use(customRateLimit);
 
-  // Apply rate limiter to all requests
-  app.use(limiter);
-
+// Apply rate limiter to all requests
+app.use(limiter);
   // Custom middleware to log blocked IP addresses
 app.use((req, res, next) => {
     if (req.rateLimit && req.rateLimit.remaining === 0) {
@@ -290,7 +282,8 @@ app.get('/', async (req, res) => {
         // Sort the user_solved array in descending order of points
 
         var currentDate = moment().utcOffset("+05:30");
-       
+        console.log(currentDate);
+
         // Set hours, minutes, and seconds to zero
         currentDate.hours(0);
         currentDate.minutes(0);
@@ -302,6 +295,7 @@ app.get('/', async (req, res) => {
         
         
         previousDate = moment(previousDate);
+        console.log(previousDate);
         // Set hours, minutes, and seconds to zero
         previousDate.hours(0);
         previousDate.minutes(0);
