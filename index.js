@@ -141,7 +141,7 @@ async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner
 }
 
 // Example usage
-const url = 'https://leetcode-leaderboard-fj91.onrender.com/'; // Replace with your website's URL
+const url = 'https://leetcode-leaderboard-2.onrender.com/'; // Replace with your website's URL
 const outputPath = 'weekly_standings_screenshot.png'; // Path to save the screenshot
 const repositoryOwner = 'ZaRobot10'; // Replace with your GitHub username or organization name
 const repositoryName = 'leetcode_leaderboard'; // Replace with your GitHub repository name
@@ -313,8 +313,7 @@ app.get('/', async (req, res) => {
         
         var day = days[currentDate.day()];
         console.log(day);
-       
-       
+    
         
         // Check if the difference is 7 days or more
         if (differenceInDays >= 7) {
