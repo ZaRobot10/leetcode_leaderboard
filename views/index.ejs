@@ -47,6 +47,8 @@
         <button onclick="showOverall()">Overall</button>
         <button onclick="showWeekly()" id="weekly">Weekly</button>
         <button onclick="showRecentSubmissions()">Recent Submissions</button>
+        <button onclick="showLeaderBoard()">LeaderBoard</button>
+        
         
     </div>
 
@@ -106,7 +108,27 @@
 
         </tbody>
     </table>
+
+    <div id="leaderboard_ss" style="display: none;">
+
+    
+        <div id="yearContainer">
+            <button id="prevYearBtn">&lt;</button>
+            <span id="currentYear"></span>
+            <button id="nextYearBtn">&gt;</button>
+        </div>
+
+        <div class="calendar" id="calendar">
+            <!-- Calendar weeks will be dynamically populated here -->
+        </div>
+        <div id="photoPopup">
+            <img id="photo" class="photo" src="" alt="Screenshot">
+        </div>
+        <div class="overlay"></div> 
+    </div>
+    
     <script>
+        
         var userSolvedData = JSON.parse('<%- JSON.stringify(user_solved) %>');
     
         function updateSerialNumbers() {
@@ -120,6 +142,8 @@
 
             document.getElementById("leaderboard").style.display = "table";
             document.getElementById("recentSubmissionsTable").style.display = "none";
+            document.getElementById("leaderboard_ss").style.display = "none";
+
             var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             for (var i = 0; i < rows.length; i++) {
                 var cells = rows[i].getElementsByTagName("td");
@@ -144,6 +168,8 @@
 
             document.getElementById("leaderboard").style.display = "table";
             document.getElementById("recentSubmissionsTable").style.display = "none";
+            document.getElementById("leaderboard_ss").style.display = "none";
+
     var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
     var modifiedUserSolvedData = [];
 
@@ -198,7 +224,130 @@
 function showRecentSubmissions() {
     document.getElementById("leaderboard").style.display = "none";
     document.getElementById("recentSubmissionsTable").style.display = "table";
+    document.getElementById("leaderboard_ss").style.display = "none";
 }
+
+function showLeaderBoard() {
+    document.getElementById("leaderboard").style.display = "none";
+    document.getElementById("recentSubmissionsTable").style.display = "none";
+    document.getElementById("leaderboard_ss").style.display = "block";
+
+    
+}
+
+
+let currentYear;
+        const startYear = 2024; // Change this to the year you want to start the calendar from
+        const currentYearElement = document.getElementById('currentYear');
+        const prevYearBtn = document.getElementById('prevYearBtn');
+        const nextYearBtn = document.getElementById('nextYearBtn');
+
+        generateCalendar();
+
+       // Function to display photo for a specific week
+function displayPhotoForWeek(week) {
+    const photoPopup = document.getElementById('photoPopup');
+    const overlay = document.querySelector('.overlay');
+    const photo = document.getElementById('photo');
+
+    // Update the src attribute of the photo element
+    photo.src = `screenshots/${week}.png`; // Assuming the screenshots are named as YYYY_weekX.png
+
+    // Show the popup and overlay
+    photoPopup.style.display = 'block';
+    overlay.style.display = 'block';
+
+    // Hide the popup and overlay when clicking outside the photo
+    overlay.addEventListener('click', () => {
+        photoPopup.style.display = 'none';
+        overlay.style.display = 'none';
+    });
+}
+
+
+        // Function to generate the calendar with clickable weeks
+        function generateCalendar() {
+            const calendarContainer = document.getElementById('calendar');
+
+            // Display current year
+            currentYear = "<%= current_year %>";
+            currentYear = parseInt(currentYear);
+            currentYearElement.textContent = currentYear;
+
+            // Attach event listeners to arrow buttons
+            prevYearBtn.addEventListener('click', () => {
+                if (currentYear > startYear) {
+                    currentYear--;
+                    updateCalendar();
+                }
+            });
+
+            nextYearBtn.addEventListener('click', () => {
+                if (currentYear < new Date().getFullYear()) {
+                    currentYear++;
+                    updateCalendar();
+                }
+            });
+
+            // Generate the calendar for the current year
+            updateCalendar();
+        }
+
+        // Function to update the calendar for the current year
+        function updateCalendar() {
+            currentYearElement.textContent = currentYear;
+            prevYearBtn.disabled = currentYear === startYear;
+            nextYearBtn.disabled = currentYear === new Date().getFullYear();
+            generateCalendarForYear(currentYear);
+        }
+
+
+    // Function to generate the calendar for a specific year
+function generateCalendarForYear(year) {
+    const calendarContainer = document.getElementById('calendar');
+    calendarContainer.innerHTML = ''; // Clear existing calendar
+
+    // Determine the current week and adjust the starting week accordingly
+    var currentYear = "<%= current_year %>";
+    currentYear = parseInt(currentYear);
+
+    var currentWeek = currentYear === year ? "<%= current_week %>" : 52;
+    currentWeek = parseInt(currentWeek);
+
+    const startWeek = year === 2024 ? 17 : 1;
+
+    console.log("Current Year: ", currentYear);
+    console.log("Current Week: ", currentWeek);
+    console.log("Start Week: ", startWeek);
+
+    // Loop through weeks starting from the adjusted starting week
+    for (let week = startWeek; week < currentWeek; week++) {
+        // Check if the image file exists for the current week
+        const imagePath = `screenshots/${year}_week${week}.png`;
+        const weekElement = document.createElement('div');
+        weekElement.classList.add('week');
+
+        // Create a circle element for displaying the week number
+        const circle = document.createElement('div');
+        circle.classList.add('circle');
+        circle.textContent = week; // Set the week number
+
+        // Append the circle to the week element
+        weekElement.appendChild(circle);
+
+        // Attach click event listener to each week element
+        weekElement.addEventListener('click', () => {
+            // Display photo for the clicked week in the format "YYYY_weekX"
+            displayPhotoForWeek(`${year}_week${week}`);
+        });
+
+        calendarContainer.appendChild(weekElement);
+    
+
+            
+    }
+}
+
 
     </script>
     
