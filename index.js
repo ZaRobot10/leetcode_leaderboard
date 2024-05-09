@@ -125,7 +125,7 @@ async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner
         await octokit.repos.createOrUpdateFileContents({
             owner: repositoryOwner,
             repo: repositoryName,
-            path: `screenshots/${outputPath_github}`, // Path where the screenshot will be stored in the repository
+            path: `public/screenshots/${outputPath_github}`, // Path where the screenshot will be stored in the repository
             message: commitMessage,
             content: fileContent.toString('base64'),
             branch: 'main' // Replace with the target branch
@@ -140,6 +140,7 @@ async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner
     }
 }
 
+
 // Example usage
 const url = 'https://leetcode-leaderboard-2.onrender.com/'; // Replace with your website's URL
 const outputPath = 'weekly_standings_screenshot.png'; // Path to save the screenshot
@@ -148,7 +149,7 @@ const repositoryName = 'leetcode_leaderboard'; // Replace with your GitHub repos
 const commitMessage = 'Add weekly standings screenshot'; // Commit message
 const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHub personal access token
 
-
+captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken);
 
 async function updateProblemsAndDateInUserNames(userNames) {
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -291,7 +292,9 @@ app.get('/', async (req, res) => {
         currentDate.milliseconds(0);
 
         console.log(currentDate);
-
+        
+        var current_year = currentDate.year();
+        var current_week = currentDate.isoWeek();
         
         
         previousDate = moment(previousDate);
@@ -343,7 +346,7 @@ app.get('/', async (req, res) => {
         
 
         console.log('User data fetched successfully.');
-        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day });
+        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day , current_year: current_year, current_week: current_week});
     } 
     catch (error) {
         console.error('Error fetching user data:', error);
