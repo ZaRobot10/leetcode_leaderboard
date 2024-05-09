@@ -149,7 +149,6 @@ const repositoryName = 'leetcode_leaderboard'; // Replace with your GitHub repos
 const commitMessage = 'Add weekly standings screenshot'; // Commit message
 const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHub personal access token
 
-captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken);
 
 async function updateProblemsAndDateInUserNames(userNames) {
     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
