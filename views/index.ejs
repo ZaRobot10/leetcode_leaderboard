@@ -171,7 +171,8 @@
             document.getElementById("leaderboard_ss").style.display = "none";
 
     var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-    var modifiedUserSolvedData = [];
+    var modifiedUserSolvedData = []; 
+    var daily = JSON.parse('<%- JSON.stringify(daily_solved) %>');
 
     for (var i = 0; i < rows.length; i++) {
         var cells = rows[i].getElementsByTagName("td");
@@ -182,6 +183,17 @@
         var modifiedTotal = userSolvedData[i].total - userSolvedData[i].problems[0];
         var modifiedPoints = modifiedEasy + 2 * modifiedMedium + 4 * modifiedHard;
 
+        
+        var dailySolved;
+       
+        // find the daily  corresponding to the user
+        for (var j = 0; j < daily.length; j++) {
+            if (daily[j].user === userSolvedData[i].name) {
+                dailySolved = daily[j];
+                break;
+            }
+        }
+
         // Create an object with modified values
         var modifiedUser = {
             name: userSolvedData[i].name,
@@ -189,7 +201,9 @@
             medium: modifiedMedium,
             hard: modifiedHard,
             total: modifiedTotal,
-            points: modifiedPoints
+            points: modifiedPoints,
+            daily: dailySolved
+           
         };
 
         // Add the modified object to the new array
@@ -210,7 +224,9 @@
         // Update values for weekly view
         // update name with modifiedUserSolvedData
 
-        cells[1].innerHTML = `<a href="https://leetcode.com/${modifiedUserSolvedData[i].name}">${modifiedUserSolvedData[i].name}</a>`;
+        var textColor = modifiedUserSolvedData[i].daily.daily_solved ? "green" : "red";
+    
+        cells[1].innerHTML = `<a href="https://leetcode.com/${modifiedUserSolvedData[i].name}" style="color: ${textColor};">${modifiedUserSolvedData[i].name}</a>`;
         cells[2].innerText = modifiedUserSolvedData[i].easy; // Easy
         cells[3].innerText = modifiedUserSolvedData[i].medium; // Medium
         cells[4].innerText = modifiedUserSolvedData[i].hard; // Hard
