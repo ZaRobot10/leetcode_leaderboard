@@ -154,7 +154,7 @@ const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHu
 
 
 async function updateProblemsAndDateInUserNames(userNames) {
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const client = new MongoClient(uri);
   
     try {
         await client.connect();
@@ -211,7 +211,7 @@ await updateProblemsAndDateInUserNames(userNames);
 
 async function insertWeeklyRecords(userNames) {
     
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const client = new MongoClient(uri);
   
     try {
       await client.connect();
@@ -395,7 +395,7 @@ app.get('/', async (req, res) => {
 
 // Function to empty the daily_solved table and fill it with data from the array
 async function updateDailySolvedTable() {
-    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    const client = new MongoClient(uri);
 
     try {
         await client.connect();
