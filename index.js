@@ -78,7 +78,10 @@ var submissons = [];
 
 var previousDate;
 
+var daily_solved = [];
 
+var daily_problem = await leetcode.daily();
+daily_problem = daily_problem.question.titleSlug;
 
 // Function to capture screenshot after clicking the "Weekly" button and push it to GitHub
 async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken) {
@@ -159,6 +162,22 @@ async function updateProblemsAndDateInUserNames(userNames) {
     
         const database = client.db("leaderboard");
         const weeklyRecordsCollection = database.collection("weekly_records");
+
+        const daily_solved_collection = database.collection("daily_solved");
+
+        const cursor = daily_solved_collection.find({});
+
+        // Iterating through the cursor and pushing documents to daily_solved array
+        await cursor.forEach(doc => {
+            daily_solved.push({
+                user: doc.user,
+                daily_solved: doc.daily_solved
+            });
+        });
+
+        // console.log('Retrieved data:', daily_solved);
+
+        
     
         for (let i = 0; i < userNames.length; i++) {
             const { user } = userNames[i];
@@ -275,9 +294,27 @@ app.get('/', async (req, res) => {
         console.log(count + '. Fetching user data...');
 
     try { 
-        
+
+        var new_daily_problem = await leetcode.daily();
+        new_daily_problem = new_daily_problem.question.titleSlug;
+
+        if (daily_problem != new_daily_problem)
+            {
+                daily_problem = new_daily_problem;
+                daily_solved = [];
+                for (var i = 0; i < userNames.length; i++) {
+                    daily_solved.push({
+                        user: userNames[i].user,
+                        daily_solved: false
+                    });
+                }
+            }
+
         submissons = [];
         const user_solved = await Promise.all(userNames.map(username => fetchUserData(username.user, username.problems)));
+
+      
+        // console.log(daily_problem);
 
         // Sort the user_solved array in descending order of points
 
@@ -345,7 +382,9 @@ app.get('/', async (req, res) => {
         
 
         console.log('User data fetched successfully.');
-        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day , current_year: current_year, current_week: current_week});
+        await updateDailySolvedTable();
+       
+        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day , current_year: current_year, current_week: current_week, daily_problem: daily_problem, daily_solved: daily_solved});
     } 
     catch (error) {
         console.error('Error fetching user data:', error);
@@ -353,6 +392,30 @@ app.get('/', async (req, res) => {
     }
 });
 
+
+// Function to empty the daily_solved table and fill it with data from the array
+async function updateDailySolvedTable() {
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+    try {
+        await client.connect();
+
+        const database = client.db('leaderboard');
+        const dailySolvedCollection = database.collection('daily_solved');
+
+        // Delete all documents in the daily_solved collection
+        await dailySolvedCollection.deleteMany({});
+
+        // Insert new data from the array into the daily_solved collection
+        await dailySolvedCollection.insertMany(daily_solved);
+
+        console.log('Daily solved table updated successfully.');
+    } catch (error) {
+        console.error('Error occurred:', error);
+    } finally {
+        await client.close();
+    }
+}
 
 async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
@@ -386,6 +449,12 @@ async function fetchUserData(username, problems) {
         {
             submissons.push(submissonsData);
         
+        }
+       
+        if (result.recentSubmissionList[i].titleSlug == daily_problem && result.recentSubmissionList[i].statusDisplay == 'Accepted')
+        {
+            daily_solved.find(element => element.user == username).daily_solved = true;
+            
         }
 
         
@@ -432,3 +501,39 @@ app.listen(port, () => {
 // }
 
 // insertOneRecord();
+
+// const result = await leetcode.daily();
+
+// console.log(result);
+
+
+// Function to insert data into daily_solved collection
+// async function insertData() {
+//     const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+//     try {
+//         await client.connect();
+
+//         const database = client.db('leaderboard');
+//         const collection = database.collection('daily_solved');
+
+//         // Inserting data for each user
+//         for (const user of userNames) {
+//             const data = {
+//                 user: user.user,
+//                 daily_solved: false
+//             };
+
+//             // Inserting the data
+//             const result = await collection.insertOne(data);
+//             console.log(`Inserted user ${user.user} with _id: ${result.insertedId}`);
+//         }
+//     } catch (error) {
+//         console.error('Error occurred:', error);
+//     } finally {
+//         await client.close();
+//     }
+// }
+
+// // Calling the function to insert data
+// await insertData();
