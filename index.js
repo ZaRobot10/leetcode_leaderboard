@@ -421,9 +421,11 @@ async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
 
     // console.log(result);
-
-    // console.log(result);
-    const user = {
+    var error = false;
+    var user;
+    try
+    {
+    user = {
         name: username,
         easy: result.matchedUser.submitStats.acSubmissionNum[1].count,
         medium: result.matchedUser.submitStats.acSubmissionNum[2].count,
@@ -434,31 +436,52 @@ async function fetchUserData(username, problems) {
                 4 * result.matchedUser.submitStats.acSubmissionNum[3].count,
         problems: problems
     };
+}
+catch (err)
+{
+    error = true;
+    console.log('Error fetching user data for:', username);
+    user = {
+        name: username,
+        easy: 0,
+        medium: 0,
+        hard: 0,
+        total: 0,
+        points: 0,
+        problems: problems
+    };
+}
 
-    for (var i = 0; i < result.recentSubmissionList.length; i++) {
-        const submissonsData = {
-            user: username,
-            title: result.recentSubmissionList[i].title,
-            titleSlug: result.recentSubmissionList[i].titleSlug,
-            statusDisplay: result.recentSubmissionList[i].statusDisplay,
-            timestamp: result.recentSubmissionList[i].timestamp,
-            time : unixTimeToNormal(result.recentSubmissionList[i].timestamp)
-        };
+    if (!error)
+    {
 
-        if (username != 'za_robot10')
-        {
-            submissons.push(submissonsData);
         
-        }
-       
-        if (result.recentSubmissionList[i].titleSlug == daily_problem && result.recentSubmissionList[i].statusDisplay == 'Accepted')
-        {
-            daily_solved.find(element => element.user == username).daily_solved = true;
+        for (var i = 0; i < result.recentSubmissionList.length; i++) {
+            const submissonsData = {
+                user: username,
+                title: result.recentSubmissionList[i].title,
+                titleSlug: result.recentSubmissionList[i].titleSlug,
+                statusDisplay: result.recentSubmissionList[i].statusDisplay,
+                timestamp: result.recentSubmissionList[i].timestamp,
+                time : unixTimeToNormal(result.recentSubmissionList[i].timestamp)
+            };
+
+            if (username != 'za_robot10')
+            {
+                submissons.push(submissonsData);
+            
+            }
+        
+            if (result.recentSubmissionList[i].titleSlug == daily_problem && result.recentSubmissionList[i].statusDisplay == 'Accepted')
+            {
+                daily_solved.find(element => element.user == username).daily_solved = true;
+                
+            }
+
             
         }
-
-        
     }
+
 
     return user;
 }
