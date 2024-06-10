@@ -69,7 +69,7 @@ var userNames = [
     { user: 'aadichachra', problems: [5, 1, 2, 2] },
     { user: 'BinaryWizard_8', problems: [5, 1, 2, 2] },
     { user: 'ananyak84', problems: [5, 1, 2, 2] },
-    { user: 'harshitchawla335', problems: [5, 1, 2, 2] },
+    { user: 'harshghai', problems: [5, 1, 2, 2] },
     { user: 'madhurbakshi', problems: [5, 1, 2, 2] }
     
 ];
