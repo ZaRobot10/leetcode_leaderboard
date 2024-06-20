@@ -64,7 +64,7 @@ var userNames = [
     { user: 'dsharma02102004', problems: [5, 1, 2, 2] },
     { user: 'varun9904', problems: [5, 1, 2, 2] },
     { user: 'krishankant_nsut', problems: [5, 1, 2, 2] },
-    { user: 'D-01000100', problems: [5, 1, 2, 2] },
+    { user: 'djKing-01000100', problems: [5, 1, 2, 2] },
     { user: 's1marjeet_singh', problems: [5, 1, 2, 2] },
     { user: 'aadichachra', problems: [5, 1, 2, 2] },
     { user: 'BinaryWizard_8', problems: [5, 1, 2, 2] },
