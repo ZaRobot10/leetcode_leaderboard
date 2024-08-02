@@ -28,7 +28,23 @@ const performLogin = async () => {
     let retries = 5;
     while (retries > 0) {
         try {
-            const browser = await puppeteer.launch({ headless: false }); // Set headless to false to see the browser
+            const browser = await puppeteer.launch({
+                headless: false, // Set headless to false to see the browser
+                args: [
+                    "--disable-setuid-sandbox",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--no-first-run",
+                    "--no-err-dev",
+                    "--disable-gpu",
+                    "--disable-software-rasterizer",
+                    "--disable-features=VizDisplayCompositor",
+                ],
+        
+                executablePath: process.env.NODE_ENV === "production"
+                    ? process.env.PUPPETEER_EXECUTABLE_PATH
+                    : puppeteer.executablePath(),
+            });
             const page = await browser.newPage();
             await page.goto('https://leetcode.com/accounts/login/'); // Replace with the login page URL
 
