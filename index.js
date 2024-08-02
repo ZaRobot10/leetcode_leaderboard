@@ -20,8 +20,7 @@ const leetcode = new LeetCode();
 
 const username = process.env.LEETCODE_USERNAME;
 const password = process.env.LEETCODE_PASSWORD;
-const cookie = process.env.COOKIE;
-console.log(cookie);
+const cookie ="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfYXV0aF91c2VyX2lkIjoiMTQxMTYxNDUiLCJfYXV0aF91c2VyX2JhY2tlbmQiOiJkamFuZ28uY29udHJpYi5hdXRoLmJhY2tlbmRzLk1vZGVsQmFja2VuZCIsIl9hdXRoX3VzZXJfaGFzaCI6Ijc5MTRiMWQ3ODQ3YTQ1MmQzNjczYmMwNjNjYTczYmY5MDMxNWZhOWE5ZTRmNTJiNDA3N2RjOWMxNzMxOGEzNjQiLCJpZCI6MTQxMTYxNDUsImVtYWlsIjoiZWthbmthYXIua2hlcmEudWcyMkBuc3V0LmFjLmluIiwidXNlcm5hbWUiOiJUYXN0eUJ1ZyIsInVzZXJfc2x1ZyI6IlRhc3R5QnVnIiwiYXZhdGFyIjoiaHR0cHM6Ly9hc3NldHMubGVldGNvZGUuY29tL3VzZXJzL2RlZmF1bHRfYXZhdGFyLmpwZyIsInJlZnJlc2hlZF9hdCI6MTcyMjYwMjA2MywiaXAiOiIxMjIuMTc2LjE5NC4yMSIsImlkZW50aXR5IjoiN2Y2NWZmMzE3YzIzNzY0MWY3YWFjZTNiN2RhYzAzZDYiLCJkZXZpY2Vfd2l0aF9pcCI6WyI4NzZiNjc5M2ZmMDI5Y2JiZDAwZmY4NWI0ZjJlOWUwOCIsIjEyMi4xNzYuMTk0LjIxIl0sInNlc3Npb25faWQiOjY3OTUxNjY4LCJfc2Vzc2lvbl9leHBpcnkiOjEyMDk2MDB9.9EwoJTqjy1OodJvuuHbzempUUxrNSMjyY6fj3FzBJH0";
 
 // Function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -613,6 +612,7 @@ app.listen(port, () => {
     console.log(`Server is running on port http://localhost:${port}`);
 });
 
+// await performLogin();
 app.post('/process-submission', async(req, res) => {
 
     try {
