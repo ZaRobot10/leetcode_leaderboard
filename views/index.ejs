@@ -171,11 +171,10 @@
                             <span style="display:none;" id="submission-id-<%= serialNumber %>"><%= submission.id %></span>
                             <span
                             class="clickable"
-                            onclick="handleClick('<%= submission.id %>', '<%= submission.user %>', '<%= submission.title %>', '<%= submission.statusDisplay %>')"
+                            onclick='handleClick("<%= submission.id %>", "<%= submission.user %>", "<%= submission.title %>", "<%= submission.statusDisplay %>")'
                         >
                             <%= submission.time %>
                         </span>
-
                         </td>
                         <td><a href="https://leetcode.com/problems/<%= submission.titleSlug %>"><%= submission.title %></a></td>
                         <td class="verdict <%= submission.statusDisplay === 'Accepted' ? 'accepted' : 'rejected' %>">
