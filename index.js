@@ -108,7 +108,6 @@ const performLogin = async () => {
             } else {
                 console.error('All retry attempts failed.');
             }
-            await browser.close();
         }
     }
 };
