@@ -1,19 +1,110 @@
 import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { LeetCode } from "leetcode-query";
+import { LeetCode, Credential } from "leetcode-query";
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import rateLimit from 'express-rate-limit';
 import puppeteer from 'puppeteer';
 import { Octokit } from '@octokit/rest';
 import fs from 'fs';
 import moment from 'moment';
+import bodyParser from 'body-parser';
 
 dotenv.config(); // Load environment variables from .env file
 const app = express();
 const port = 3000;
 const uri = process.env.MONGODB_URI;
 const leetcode = new LeetCode();
+
+const username = process.env.LEETCODE_USERNAME;
+const password = process.env.LEETCODE_PASSWORD;
+const cookie = process.env.COOKIE;
+
+// Function to introduce a delay
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Function to handle retry logic
+const performLogin = async () => {
+    let retries = 5;
+    while (retries > 0) {
+        try {
+            const browser = await puppeteer.launch({ headless: false }); // Set headless to false to see the browser
+            const page = await browser.newPage();
+            await page.goto('https://leetcode.com/accounts/login/'); // Replace with the login page URL
+
+            // Wait for the login form to be present on the page
+            await page.waitForSelector('#id_login');
+            await page.waitForSelector('#id_password');
+            await page.waitForSelector('#signin_btn');
+
+            // Type slowly like a human would
+            await page.type('#id_login', username, { delay: 500 }); // Adjust delay as needed (in milliseconds)
+            await page.type('#id_password', password, { delay: 500 });
+
+            // Wait for the Sign In button to be enabled and click it
+            await page.waitForFunction(() => {
+                const button = document.querySelector('#signin_btn');
+                return button && !button.disabled;
+            });
+            await page.click('#signin_btn');
+
+            // Wait for navigation to complete after login
+            await page.waitForNavigation({ waitUntil: 'networkidle0' }); // Wait for the network to be idle
+
+            // Get cookies
+            const cookies = await page.cookies();
+            const session = cookies.find(cookie => cookie.name === 'LEETCODE_SESSION');
+
+            if (session) {
+                // Read the existing .env file content
+                let envContent = '';
+                try {
+                    envContent = fs.readFileSync('.env', 'utf-8');
+                } catch (error) {
+                    console.error('Failed to read .env file:', error);
+                }
+                
+                // Update the COOKIE value
+                const updatedEnvContent = envContent
+                    .split('\n')
+                    .map(line => line.startsWith('COOKIE=') ? `COOKIE=${session.value}` : line)
+                    .join('\n');
+
+                // Write the updated content back to the .env file
+                try {
+                    fs.writeFileSync('.env', updatedEnvContent);
+                    
+                } catch (error) {
+                    console.error('Failed to write to .env file:', error);
+                }
+            } else {
+                console.error('LEETCODE_SESSION cookie not found');
+            }
+
+            await browser.close();
+            return; // Exit the function if successful
+        } catch (error) {
+            console.error('Error occurred:', error);
+            retries--;
+            if (retries > 0) {
+                console.log(`Retrying... (${retries} attempts left)`);
+                await delay(3000); // Wait before retrying (adjust delay as needed)
+            } else {
+                console.error('All retry attempts failed.');
+            }
+            await browser.close();
+        }
+    }
+};
+
+// Call the function with retry logic
+await performLogin();
+
+
+const credential = new Credential(); // Create a new Credential instance
+    await credential.init(cookie); // Initialize the credential with the session
+
+    const leetcode_auth = new LeetCode(credential); 
 
 // Trust proxy headers
 app.set('trust proxy', true);
@@ -48,7 +139,7 @@ app.use((req, res, next) => {
 });
 // middleware
 app.use(express.static('public'));
-
+app.use(bodyParser.json());
 app.set('view engine', 'ejs');
 var count = 0;
 
@@ -82,6 +173,8 @@ var daily_solved = [];
 
 var daily_problem = await leetcode.daily();
 daily_problem = daily_problem.question.titleSlug;
+
+
 
 // Function to capture screenshot after clicking the "Weekly" button and push it to GitHub
 async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken) {
@@ -152,12 +245,14 @@ const repositoryName = 'leetcode_leaderboard'; // Replace with your GitHub repos
 const commitMessage = 'Add weekly standings screenshot'; // Commit message
 const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHub personal access token
 
+const client = new MongoClient(uri);
+await client.connect();
+const database = client.db("leaderboard");
 
 async function updateProblemsAndDateInUserNames(userNames) {
-    const client = new MongoClient(uri);
-  
+
     try {
-        await client.connect();
+        
         console.log("Connected to MongoDB");
     
         const database = client.db("leaderboard");
@@ -200,9 +295,7 @@ async function updateProblemsAndDateInUserNames(userNames) {
         console.log("Updated userNames array with problems and previousDate from database.");
     } catch (error) {
         console.error("Error updating userNames array:", error);
-    } finally {
-        await client.close();
-    }
+    } 
 }
 
 await updateProblemsAndDateInUserNames(userNames);
@@ -211,10 +304,10 @@ await updateProblemsAndDateInUserNames(userNames);
 
 async function insertWeeklyRecords(userNames) {
     
-    const client = new MongoClient(uri);
+    
   
     try {
-      await client.connect();
+      
       console.log("Connected to MongoDB");
   
       const database = client.db("leaderboard");
@@ -237,9 +330,7 @@ async function insertWeeklyRecords(userNames) {
       console.log(`${userNames.length} records inserted successfully.`);
     } catch (error) {
       console.error("Error inserting records:", error);
-    } finally {
-      await client.close();
-    }
+    } 
 }
 
 
@@ -395,10 +486,10 @@ app.get('/', async (req, res) => {
 
 // Function to empty the daily_solved table and fill it with data from the array
 async function updateDailySolvedTable() {
-    const client = new MongoClient(uri);
+    
 
     try {
-        await client.connect();
+        
 
         const database = client.db('leaderboard');
         const dailySolvedCollection = database.collection('daily_solved');
@@ -412,15 +503,13 @@ async function updateDailySolvedTable() {
         console.log('Daily solved table updated successfully.');
     } catch (error) {
         console.error('Error occurred:', error);
-    } finally {
-        await client.close();
-    }
+    } 
 }
 
 async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
 
-    // console.log(result);
+    console.log(result);
     var error = false;
     var user;
     try
@@ -463,7 +552,8 @@ catch (err)
                 titleSlug: result.recentSubmissionList[i].titleSlug,
                 statusDisplay: result.recentSubmissionList[i].statusDisplay,
                 timestamp: result.recentSubmissionList[i].timestamp,
-                time : unixTimeToNormal(result.recentSubmissionList[i].timestamp)
+                time : unixTimeToNormal(result.recentSubmissionList[i].timestamp),
+                id : result.recentSubmissionList[i].id
             };
 
             if (username != 'za_robot10')
@@ -490,6 +580,24 @@ catch (err)
 app.listen(port, () => {
 
     console.log(`Server is running on port http://localhost:${port}`);
+});
+app.post('/process-submission', async(req, res) => {
+
+    try {
+    const submissionId = req.body.id;
+
+    var result =  await leetcode_auth.submission(submissionId);
+    var code = result.code;
+
+
+    res.json({ success: true, code: code });
+    }
+
+    catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+
+
 });
 
 
