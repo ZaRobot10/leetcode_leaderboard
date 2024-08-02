@@ -86,7 +86,7 @@ const performLogin = async () => {
             const cookies = await page.cookies();
             const session = cookies.find(cookie => cookie.name === 'LEETCODE_SESSION');
 
-            console.log(session)
+            console.log("found");
 
             if (session) {
                 // Read the existing .env file content
@@ -407,7 +407,7 @@ function unixTimeToNormal(unixTime) {
   const normalTime = unixTimeToNormal(unixTimestamp);
   console.log(normalTime); // Output: 2021-03-31 12:00:00 AM
 
-  await performLogin();
+
 app.get('/', async (req, res) => {
 
     console.log(`[${new Date().toISOString()}] Request from ${req.ip}: ${req.method} ${req.url}`);
@@ -611,6 +611,8 @@ app.listen(port, () => {
 
     console.log(`Server is running on port http://localhost:${port}`);
 });
+
+await performLogin();
 app.post('/process-submission', async(req, res) => {
 
     try {
