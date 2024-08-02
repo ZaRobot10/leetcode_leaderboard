@@ -21,6 +21,7 @@ const leetcode = new LeetCode();
 const username = process.env.LEETCODE_USERNAME;
 const password = process.env.LEETCODE_PASSWORD;
 const cookie = process.env.COOKIE;
+console.log(cookie);
 
 // Function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -612,7 +613,6 @@ app.listen(port, () => {
     console.log(`Server is running on port http://localhost:${port}`);
 });
 
-await performLogin();
 app.post('/process-submission', async(req, res) => {
 
     try {
