@@ -116,7 +116,6 @@ const performLogin = async () => {
 };
 
 // Call the function with retry logic
-await performLogin();
 
 
 const credential = new Credential(); // Create a new Credential instance
@@ -395,7 +394,7 @@ function unixTimeToNormal(unixTime) {
   const normalTime = unixTimeToNormal(unixTimestamp);
   console.log(normalTime); // Output: 2021-03-31 12:00:00 AM
 
-  
+  await performLogin();
 app.get('/', async (req, res) => {
 
     console.log(`[${new Date().toISOString()}] Request from ${req.ip}: ${req.method} ${req.url}`);
