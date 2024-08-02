@@ -31,7 +31,10 @@ const performLogin = async () => {
     while (retries > 0) {
         try {
             const browser = await puppeteer.launch({
-                headless: false, // Set headless to false to see the browser
+                defaultViewport: {
+                    width: 1366,
+                    height: 768
+                },
                 args: [
                     "--disable-setuid-sandbox",
                     "--no-sandbox",
@@ -42,13 +45,20 @@ const performLogin = async () => {
                     "--disable-software-rasterizer",
                     "--disable-features=VizDisplayCompositor",
                 ],
-        
                 executablePath: process.env.NODE_ENV === "production"
                     ? process.env.PUPPETEER_EXECUTABLE_PATH
                     : puppeteer.executablePath(),
             });
+
             const page = await browser.newPage();
-            await page.goto('https://leetcode.com/accounts/login/'); // Replace with the login page URL
+
+            // Set a realistic user-agent
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+
+            // Add random delays to simulate human typing
+            const getRandomDelay = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+            await page.goto('https://leetcode.com/accounts/login/', { waitUntil: 'networkidle0' });
 
             // Wait for the login form to be present on the page
             await page.waitForSelector('#id_login');
@@ -56,22 +66,27 @@ const performLogin = async () => {
             await page.waitForSelector('#signin_btn');
 
             // Type slowly like a human would
-            await page.type('#id_login', username, { delay: 500 }); // Adjust delay as needed (in milliseconds)
-            await page.type('#id_password', password, { delay: 500 });
+            await page.type('#id_login', username, { delay: getRandomDelay(300, 700) });
+            await page.type('#id_password', password, { delay: getRandomDelay(300, 700) });
 
             // Wait for the Sign In button to be enabled and click it
             await page.waitForFunction(() => {
                 const button = document.querySelector('#signin_btn');
                 return button && !button.disabled;
             });
+
+            // Add a slight delay before clicking to simulate a human action
+            await delay(getRandomDelay(500, 1000));
             await page.click('#signin_btn');
 
             // Wait for navigation to complete after login
-            await page.waitForNavigation({ waitUntil: 'networkidle0' }); // Wait for the network to be idle
+            await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
             // Get cookies
             const cookies = await page.cookies();
             const session = cookies.find(cookie => cookie.name === 'LEETCODE_SESSION');
+
+            console.log(session)
 
             if (session) {
                 // Read the existing .env file content
@@ -91,7 +106,6 @@ const performLogin = async () => {
                 // Write the updated content back to the .env file
                 try {
                     fs.writeFileSync('.env', updatedEnvContent);
-                    
                 } catch (error) {
                     console.error('Failed to write to .env file:', error);
                 }
@@ -110,7 +124,6 @@ const performLogin = async () => {
             } else {
                 console.error('All retry attempts failed.');
             }
-           
         }
     }
 };
