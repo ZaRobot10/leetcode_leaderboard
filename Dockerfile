@@ -5,6 +5,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+USER root
 RUN npm ci
 RUN npm install git+https://github.com/ZaRobot10/leetcode_query_updated.git
 COPY . .
