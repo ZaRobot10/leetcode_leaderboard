@@ -1,7 +1,7 @@
 import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { LeetCode, Credential } from "leetcode-query";
+import { LeetCode, Credential } from "leetcode-query1";
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import rateLimit from 'express-rate-limit';
 import puppeteer from 'puppeteer';
