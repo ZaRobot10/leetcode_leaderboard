@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LeaderBoard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
     <style>
         table {
             font-family: Arial, sans-serif;
@@ -31,6 +32,76 @@
         right: 10px; /* Adjust right position */
         top: 0px;
          }
+
+         /* Modal styles */
+         .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            padding-top: 60px; /* Location of the box */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .verdict {
+            font-weight: bold;
+        }
+
+        .verdict.accepted {
+            color: green;
+        }
+
+        .verdict.rejected {
+            color: red;
+        }
+
+        pre[class*="language-"] {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Custom CSS to ensure consistent background color */
+        .token {
+            background: none !important;
+        }
+
+        .clickable {
+        color: #1a73e8;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .clickable:hover {
+        color: darkblue;
+    }
+
     
     </style>
 
@@ -86,7 +157,7 @@
                 <th>Username</th>
                 <th>Time</th>
                 <th>Problem</th>
-                <th>Verdict</th>
+                <th class="verdict">Verdict</th>
             </tr>
         </thead>
         <tbody>
@@ -96,18 +167,28 @@
                     <tr>
                         <td><%= serialNumber++ %></td>
                         <td><a href="https://leetcode.com/<%= submission.user %>"><%= submission.user %></a></td>
-                        <td><%= submission.time %></td>
+                        <td>
+                            <span style="display:none;" id="submission-id-<%= serialNumber %>"><%= submission.id %></span>
+                            <span
+                            class="clickable"
+                            onclick="handleClick('<%= submission.id %>', '<%= submission.user %>', '<%= submission.title %>', '<%= submission.statusDisplay %>')"
+                        >
+                            <%= submission.time %>
+                        </span>
+
+                        </td>
                         <td><a href="https://leetcode.com/problems/<%= submission.titleSlug %>"><%= submission.title %></a></td>
-                        <td><%= submission.statusDisplay %></td>
+                        <td class="verdict <%= submission.statusDisplay === 'Accepted' ? 'accepted' : 'rejected' %>">
+                            <%= submission.statusDisplay %>
+                        </td>
                     </tr>
                 <% } else { %>
                     <% return; // Break out of the loop %>
                 <% } %>
             <% }); %>
-            
-
         </tbody>
     </table>
+    
 
     <div id="leaderboard_ss" style="display: none;">
 
@@ -126,6 +207,101 @@
         </div>
         <div class="overlay"></div> 
     </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modal-header">
+                <p><strong>Username:</strong> <span id="username"></span></p>
+                <p><strong>Problem:</strong> <span id="problem-name"></span></p>
+                <p><strong>Verdict:</strong> <span id="verdict" class="verdict"></span></p>
+            </div>
+
+            <button id="copy-button" style="margin-top: 0; margin-bottom: 20px;">Copy Code</button>
+            <pre><code id="code-content" class="language-javascript"></code></pre>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/line-highlight/prism-line-highlight.min.js"></script> -->
+<script>
+    function handleClick(id, username, problemName, verdict) {
+        fetch('/process-submission', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show the modal and populate data
+                var modal = document.getElementById("myModal");
+                document.getElementById("username").textContent = username || 'N/A';
+                document.getElementById("problem-name").textContent = problemName || 'N/A';
+                var verdictElement = document.getElementById("verdict");
+                verdictElement.textContent = verdict || 'N/A';
+                verdictElement.className = 'verdict ' + (verdict === 'Accepted' ? 'accepted' : 'rejected');
+                document.getElementById("code-content").textContent = data.code || 'No code available';
+                Prism.highlightElement(document.getElementById("code-content"));
+                modal.style.display = "block";
+            } else {
+                console.error("Error:", data.error);
+            }
+        })
+        .catch(error => console.error("Fetch error:", error));
+    }
+
+    // Close the modal when the user clicks on <span> (x)
+    document.querySelector(".close").onclick = function() {
+        document.getElementById("myModal").style.display = "none";
+    }
+
+    // Close the modal when the user clicks anywhere outside of the modal
+    window.onclick = function(event) {
+        var modal = document.getElementById("myModal");
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // Copy code to clipboard
+
+    document.getElementById("copy-button").onclick = function() {
+        var codeContent = document.getElementById("code-content").textContent;
+        navigator.clipboard.writeText(codeContent)
+            .then(() => {
+                console.log('Code copied to clipboard!');
+                Toastify({
+                    text: "Code copied to clipboard!",
+                    duration: 3000, // Duration in milliseconds
+                    close: true,
+                    gravity: "top", // `top` or `bottom`
+                    position: "right", // `left`, `center` or `right`
+                    backgroundColor: "#4CAF50",
+                    stopOnFocus: true, // Prevents dismissing of toast on hover
+                }).showToast();
+            })
+            .catch(err => {
+                console.error('Failed to copy code: ', err);
+                Toastify({
+                    text: "Failed to copy code!",
+                    duration: 2000, // Duration in milliseconds
+                    close: true,
+                    gravity: "top", // `top` or `bottom`
+                    position: "right", // `left`, `center` or `right`
+                    backgroundColor: "#FF0000",
+                    stopOnFocus: true, // Prevents dismissing of toast on hover
+                }).showToast();
+            });
+    }
+
+
+</script>
     
     <script>
         
