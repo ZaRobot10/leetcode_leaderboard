@@ -10,6 +10,8 @@ import fs from 'fs';
 import moment from 'moment';
 import bodyParser from 'body-parser';
 
+
+
 dotenv.config(); // Load environment variables from .env file
 const app = express();
 const port = 3000;
@@ -108,6 +110,7 @@ const performLogin = async () => {
             } else {
                 console.error('All retry attempts failed.');
             }
+           
         }
     }
 };
@@ -165,7 +168,7 @@ const days = [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
 var userNames = [
     { user: 'kalpit04', problems: [5, 1, 2, 2] },
     { user: '_Code_Shark', problems: [5, 1, 2, 2] },
-    { user: '8178458001', problems: [5, 1, 2, 2] },
+    { user: 'CipherSage05', problems: [5, 1, 2, 2] },
     { user: 'za_robot10', problems: [5, 1, 2, 2] },
     { user: 'dsharma02102004', problems: [5, 1, 2, 2] },
     { user: 'varun9904', problems: [5, 1, 2, 2] },
@@ -524,7 +527,7 @@ async function updateDailySolvedTable() {
 async function fetchUserData(username, problems) {
     const result = await leetcode.user(username);
 
-    console.log(result);
+    // console.log(result);
     var error = false;
     var user;
     try
