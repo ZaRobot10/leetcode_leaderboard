@@ -617,6 +617,7 @@ app.post('/process-submission', async(req, res) => {
 
     try {
     const submissionId = req.body.id;
+        console.log(submissionId);
 
     var result =  await leetcode_auth.submission(submissionId);
     var code = result.code;
