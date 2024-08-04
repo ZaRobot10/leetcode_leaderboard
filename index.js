@@ -20,7 +20,7 @@ const leetcode = new LeetCode();
 
 const username = process.env.LEETCODE_USERNAME;
 const password = process.env.LEETCODE_PASSWORD;
-const cookie ="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfYXV0aF91c2VyX2lkIjoiMTQxMTYxNDUiLCJfYXV0aF91c2VyX2JhY2tlbmQiOiJkamFuZ28uY29udHJpYi5hdXRoLmJhY2tlbmRzLk1vZGVsQmFja2VuZCIsIl9hdXRoX3VzZXJfaGFzaCI6Ijc5MTRiMWQ3ODQ3YTQ1MmQzNjczYmMwNjNjYTczYmY5MDMxNWZhOWE5ZTRmNTJiNDA3N2RjOWMxNzMxOGEzNjQiLCJpZCI6MTQxMTYxNDUsImVtYWlsIjoiZWthbmthYXIua2hlcmEudWcyMkBuc3V0LmFjLmluIiwidXNlcm5hbWUiOiJUYXN0eUJ1ZyIsInVzZXJfc2x1ZyI6IlRhc3R5QnVnIiwiYXZhdGFyIjoiaHR0cHM6Ly9hc3NldHMubGVldGNvZGUuY29tL3VzZXJzL2RlZmF1bHRfYXZhdGFyLmpwZyIsInJlZnJlc2hlZF9hdCI6MTcyMjYwMjA2MywiaXAiOiIxMjIuMTc2LjE5NC4yMSIsImlkZW50aXR5IjoiN2Y2NWZmMzE3YzIzNzY0MWY3YWFjZTNiN2RhYzAzZDYiLCJkZXZpY2Vfd2l0aF9pcCI6WyI4NzZiNjc5M2ZmMDI5Y2JiZDAwZmY4NWI0ZjJlOWUwOCIsIjEyMi4xNzYuMTk0LjIxIl0sInNlc3Npb25faWQiOjY3OTUxNjY4LCJfc2Vzc2lvbl9leHBpcnkiOjEyMDk2MDB9.9EwoJTqjy1OodJvuuHbzempUUxrNSMjyY6fj3FzBJH0";
+const cookie = process.env.COOKIE;
 
 // Function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -204,8 +204,97 @@ var daily_solved = [];
 var daily_problem = await leetcode.daily();
 daily_problem = daily_problem.question.titleSlug;
 
+var contest = [];
+const getUserContestRecords = async (username) => {
+    try {
+      // Fetch user contest records
+      const data = await leetcode.user_contest_info(username);
+  
+      // Default userContestRanking object
+      const defaultUserContestRanking = {
+        attendedContestsCount: 0,
+        rating: 0,
+        globalRanking: "NA",
+        totalParticipants: 573899,
+        topPercentage: "NA",
+        badge: null
+      };
+  
+      // Use default if userContestRanking is null
+      const userContestRanking = data.userContestRanking || defaultUserContestRanking;
+  
+      // Access and filter the userContestRankingHistory array
+      const userContestRankingHistory = data.userContestRankingHistory || [];
+      const attendedContests = userContestRankingHistory.filter(record => record.attended);
+  
+      // Helper functions
+      const formatTime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+        return `${hours}:${pad(minutes)}:${pad(remainingSeconds)}`;
+      };
+  
+      const pad = (number) => {
+        return number.toString().padStart(2, '0');
+      };
+  
+      // Add formatted time and rounded rating change to each contest
+      let previousRating = 1500; // Initial rating
+      const updatedAttendedContests = attendedContests.map(contest => {
+        const formattedFinishTime = formatTime(contest.finishTimeInSeconds);
+        const roundedContestRating = Math.round(contest.rating);
+        const ratingChange = roundedContestRating - previousRating;
+        previousRating = roundedContestRating; // Update previous rating
+        return {
+          ...contest,
+          formattedFinishTime,
+          ratingChange,
+          roundedContestRating
+        };
+      });
 
+       // Reverse the contests array to show from latest to oldest
+    updatedAttendedContests.reverse();
 
+      // Use Math.round to round overall user contest rating
+      const roundedRating = Math.round(userContestRanking.rating);
+  
+      // Return the relevant fields with rounded rating
+      return {
+        username,
+        userContestRanking: {
+          ...userContestRanking,
+          rating: roundedRating
+        },
+        attendedContests: updatedAttendedContests,
+        rating: roundedRating
+      };
+    } catch (error) {
+      console.error(`Error fetching user contest records for ${username}:`, error);
+      return null; // Return null in case of an error
+    }
+  };
+  
+
+  const getAllUsersContestRecords = async () => {
+    
+    for (const user of userNames) {
+      const record = await getUserContestRecords(user.user);
+      if (record) {
+        contest.push(record);
+      }
+    }
+  
+    // Sort contest by rating in descending order
+    contest.sort((a, b) => b.rating - a.rating);
+  
+    return contest;
+  };
+  
+  await getAllUsersContestRecords().then(results => {
+  });
+  
 // Function to capture screenshot after clicking the "Weekly" button and push it to GitHub
 async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner, repositoryName, commitMessage, accessToken) {
     // Launch headless browser
@@ -505,7 +594,7 @@ app.get('/', async (req, res) => {
         console.log('User data fetched successfully.');
         await updateDailySolvedTable();
        
-        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day , current_year: current_year, current_week: current_week, daily_problem: daily_problem, daily_solved: daily_solved});
+        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day , current_year: current_year, current_week: current_week, daily_problem: daily_problem, daily_solved: daily_solved, contests : contest});
     } 
     catch (error) {
         console.error('Error fetching user data:', error);
@@ -617,7 +706,6 @@ app.post('/process-submission', async(req, res) => {
 
     try {
     const submissionId = req.body.id;
-        console.log(submissionId);
 
     var result =  await leetcode_auth.submission(submissionId);
     var code = result.code;
