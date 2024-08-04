@@ -102,6 +102,22 @@
         color: darkblue;
     }
 
+    .details {
+      display: none;
+      margin-top: 10px;
+    }
+    .details table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .details th, .details td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    .details th {
+      background-color: #f2f2f2;
+    }
+
     
     </style>
 
@@ -118,8 +134,8 @@
         <button onclick="showOverall()">Overall</button>
         <button onclick="showWeekly()" id="weekly">Weekly</button>
         <button onclick="showRecentSubmissions()">Recent Submissions</button>
+        <button onclick="showContest()">Contest</button>
         <button onclick="showLeaderBoard()">LeaderBoard</button>
-        
         
     </div>
 
@@ -150,6 +166,87 @@
         </tbody>
     </table>
 
+    <table id="contestTable" style="display: none;">
+        <thead>
+          <tr>
+            <th>Sno</th>
+            <th>Username</th>
+            <th>Contests Attended</th>
+            <th>Rating</th>
+            <th>Global Ranking</th>
+            <th>Top Percentage</th>
+            <th>Badge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% contests.forEach((contest,index) => { %>
+            <tr>
+            <td><%= index + 1 %></td>
+              <td><a href="https://leetcode.com/<%= contest.username%>"><%= contest.username %> </a></td>
+              <td><span class="clickable">
+                <a href="#" onclick="toggleDetails('<%= contest.username %>'); return false;"><%= contest.userContestRanking.attendedContestsCount %></a></td>
+            </span>
+              <td><%= contest.userContestRanking.rating %></td>
+              <td><%= contest.userContestRanking.globalRanking %></td>
+              <td><%= contest.userContestRanking.topPercentage %></td>
+              <td> <% if (contest.userContestRanking.badge) { %>
+                <%= contest.userContestRanking.badge.name %>
+              <% } else { %>
+                None
+              <% } %></td>
+            </tr>
+            <tr class="details" id="details-<%= contest.username %>">
+                <td colspan="7">
+                  <h3>Details for <%= contest.username %></h3>
+                  <table >
+                    <thead>
+                      <tr>
+                        <th>Sno</th>
+                        <th>Contest Title</th>
+                        <th>Problem Solved</th>
+                        <th>Finish Time</th>
+                        <th>Ranking</th>
+                        <th>Rating</th>
+                        <th>Rating Change</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% let previousRating = 1500; %>
+                      <% contest.attendedContests.forEach((c, index) => { %>
+                        <tr>
+                            <td><%= index + 1 %></td>
+                            <td><%= c.contest.title %></td>
+                            <td><%= c.problemsSolved %></td>
+                            <td><%=c.formattedFinishTime %></td>
+                            <td><%= c.ranking %></td>
+                            <td><%= c.roundedContestRating %></td>
+                         
+                          <td>
+                            <span class="verdict <%= c.ratingChange >= 0 ? 'accepted' : 'rejected' %>">
+                                <%= c.ratingChange >= 0 ? '+' + c.ratingChange : c.ratingChange %>
+                              </span>
+                        </td>
+                          
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <script>
+        function toggleDetails(username) {
+          const detailsRow = document.getElementById(`details-${username}`);
+          if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+            detailsRow.style.display = 'table-row';
+          } else {
+            detailsRow.style.display = 'none';
+          }
+        }
+      </script>
     <table id="recentSubmissionsTable" style="display: none;">
         <thead>
             <tr>
@@ -318,6 +415,7 @@
             document.getElementById("leaderboard").style.display = "table";
             document.getElementById("recentSubmissionsTable").style.display = "none";
             document.getElementById("leaderboard_ss").style.display = "none";
+            document.getElementById("contestTable").style.display = "none";
 
             var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             for (var i = 0; i < rows.length; i++) {
@@ -344,6 +442,7 @@
             document.getElementById("leaderboard").style.display = "table";
             document.getElementById("recentSubmissionsTable").style.display = "none";
             document.getElementById("leaderboard_ss").style.display = "none";
+            document.getElementById("contestTable").style.display = "none";
 
     var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
     var modifiedUserSolvedData = []; 
@@ -416,13 +515,22 @@ function showRecentSubmissions() {
     document.getElementById("leaderboard").style.display = "none";
     document.getElementById("recentSubmissionsTable").style.display = "table";
     document.getElementById("leaderboard_ss").style.display = "none";
+    document.getElementById("contestTable").style.display = "none";
 }
 
 function showLeaderBoard() {
     document.getElementById("leaderboard").style.display = "none";
     document.getElementById("recentSubmissionsTable").style.display = "none";
     document.getElementById("leaderboard_ss").style.display = "block";
+    document.getElementById("contestTable").style.display = "none";
+    
+}
 
+function showContest() {
+    document.getElementById("leaderboard").style.display = "none";
+    document.getElementById("recentSubmissionsTable").style.display = "none";
+    document.getElementById("leaderboard_ss").style.display = "none";
+    document.getElementById("contestTable").style.display = "table";
     
 }
 
