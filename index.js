@@ -191,7 +191,8 @@ var userNames = [
     { user: 'BinaryWizard_8', problems: [5, 1, 2, 2] },
     { user: 'ananyak84', problems: [5, 1, 2, 2] },
     { user: 'harshghai', problems: [5, 1, 2, 2] },
-    { user: 'madhurbakshi', problems: [5, 1, 2, 2] }
+    { user: 'madhurbakshi', problems: [5, 1, 2, 2]},
+    { user: 'Night_sky_delta', problems: [5, 1, 2, 2] }
     
 ];
 
@@ -737,8 +738,8 @@ app.post('/process-submission', async(req, res) => {
 
 //         const record = {
 //             id: 15,
-//             user: "dabur",
-//             problems: [182, 70, 94, 18],
+//             user: "Night_sky_delta",
+//             problems: [402, 138, 224, 40],
 //             date:  date// Add the current date
 //         };
 
