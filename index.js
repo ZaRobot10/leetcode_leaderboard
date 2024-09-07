@@ -9,6 +9,7 @@ import { Octokit } from '@octokit/rest';
 import fs from 'fs';
 import moment from 'moment';
 import bodyParser from 'body-parser';
+import cron from 'node-cron';
 
 
 
@@ -21,6 +22,13 @@ const leetcode = new LeetCode();
 const username = process.env.LEETCODE_USERNAME;
 const password = process.env.LEETCODE_PASSWORD;
 const cookie = process.env.COOKIE;
+
+
+
+let recentContests = [];
+let previousContestIds = new Set(); // To keep track of processed contest IDs
+let contestDataArray = []; // To store data of new contests
+
 
 // Function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -196,6 +204,48 @@ var userNames = [
     
 ];
 
+
+async function fetchContests() {
+    try {
+        const response = await axios.get('https://lccn.lbao.site/api/v1/contests/?skip=0&limit=20');
+        const newContests = response.data;
+
+        // Find new contests by comparing with previous ones
+        const newContestIds = new Set(newContests.map(contest => contest.titleSlug));
+        const addedContests = newContestIds.difference(previousContestIds);
+
+        if (addedContests.size > 0) {
+            // Fetch data for new contests
+            for (const contestId of addedContests) {
+                console.log(`Fetching data for contest ${contestId}...`);
+                const data = await run(contestId, contestId);
+                contestDataArray.push(...data);
+            }
+
+            // Update previousContestIds
+            previousContestIds = newContestIds;
+        }
+
+        recentContests = newContests;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+
+// Utility function to compute difference between sets
+Set.prototype.difference = function(set) {
+    const difference = new Set(this);
+    for (const item of set) {
+        difference.delete(item);
+    }
+    return difference;
+};
+
+// Schedule the function to run every 2 hours
+cron.schedule('0 */2 * * *', fetchContests);
+
+// Initial call to the function
+await fetchContests();
 var submissons = [];
 
 var previousDate;
@@ -595,7 +645,7 @@ app.get('/', async (req, res) => {
         console.log('User data fetched successfully.');
         await updateDailySolvedTable();
        
-        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day , current_year: current_year, current_week: current_week, daily_problem: daily_problem, daily_solved: daily_solved, contests : contest});
+        res.render('index', { user_solved : user_solved, submissions: submissons, previousDate: previousDate, day: day , current_year: current_year, current_week: current_week, daily_problem: daily_problem, daily_solved: daily_solved, contests : contest, recentContests: recentContests, contestDataArray: contestDataArray });
     } 
     catch (error) {
         console.error('Error fetching user data:', error);
@@ -721,6 +771,104 @@ app.post('/process-submission', async(req, res) => {
 
 
 });
+
+
+
+
+async function fetchContestData(username, contestId, retries = 5, backoff = 1000) {
+    try {
+        const response = await axios.get(`https://lccn.lbao.site/api/v1/contest-records/user?contest_name=${contestId}&username=${username}`);
+        if (response.data) {
+            return response.data;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        if (error.response && error.response.status === 503 && retries > 0) {
+            console.warn(`503 error for ${username}. Retrying in ${backoff / 1000} seconds...`);
+            await delay(backoff);
+            return fetchContestData(username, contestId, retries - 1, backoff * 2);
+        } else {
+            console.error(`Error fetching data for ${username}:`, error.message);
+            return null;
+        }
+    }
+}
+
+// Round to integer
+function roundToInteger(value) {
+    return Math.round(value);
+}
+
+async function run(contestId, contestName) {
+    let contestDataArray = [];
+
+    for (const { user } of userNames) {
+        const data = await fetchContestData(user, contestId);
+
+        if (data && data.length > 0) {
+            data.forEach((entry) => {
+                entry.old_rating = roundToInteger(entry.old_rating);
+                entry.new_rating = roundToInteger(entry.new_rating);
+                entry.delta_rating = roundToInteger(entry.delta_rating);
+
+                // Parse finish_time and set startTime based on contestName
+                const finishTime = new Date(entry.finish_time);
+                 // Add 5 hours and 30 minutes to finishTime
+                 finishTime.setHours(finishTime.getHours() + 5);
+                 finishTime.setMinutes(finishTime.getMinutes() + 30);
+                let startTime;
+                if (contestName.toLowerCase().includes("biweekly")) {
+                    // Set startTime to 8 PM of the same date as finishTime
+                    startTime = new Date(finishTime);
+                    startTime.setHours(20, 0, 0); // 8 PM
+                } else {
+                    // Set startTime to 8 AM of the same date as finishTime
+                    startTime = new Date(finishTime);
+                    startTime.setHours(8, 0, 0); // 8 AM
+                }
+
+                if (!isNaN(finishTime) && !isNaN(startTime)) {
+                    const timeDiff = finishTime - startTime;
+
+                    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+                    // Add timeTaken to the entry in `hh:mm:ss` format
+                    entry.timeTaken = `${hours}:${('0' + minutes).slice(-2)}:${('0' + seconds).slice(-2)}`;
+                } else {
+                    // Handle invalid time data
+                    entry.timeTaken = "Invalid time";
+                }
+            });
+
+            contestDataArray.push(...data);
+        }
+    }
+
+    // Sort by rank
+    contestDataArray.sort((a, b) => a.rank - b.rank);
+
+    return contestDataArray;
+}
+
+
+app.post('/process-contest', async (req, res) => {
+    try {
+        const contestId = req.body.id;
+
+        // Run the function and store contest data
+        const collectedData = await run(contestId, contestId);
+
+        // Send the sorted and rounded data as the response
+        res.status(200).json({ success: true, message: 'Contest data processed successfully', data: collectedData });
+
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 
 
 // async function insertOneRecord() {
