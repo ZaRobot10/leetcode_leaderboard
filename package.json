@@ -23,6 +23,7 @@
     "leetcode-query1": "^1.2.7",
     "moment": "^2.30.1",
     "mongodb": "^6.5.0",
+    "node-cron": "^3.0.3",
     "puppeteer": "^22.7.1",
     "request": "^2.88.2"
   }
