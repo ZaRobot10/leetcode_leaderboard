@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LeaderBoard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+
+    <link rel="icon" sizes="16x16" href="/icons8-16.png" type="image/png">
+    <link rel="icon" sizes="32x32" href="/icons8-32.png" type="image/png">
+    <link rel="icon" sizes="96x96" href="/icons8-96.png" type="image/png">
+
     <style>
         table {
             font-family: Arial, sans-serif;
@@ -118,6 +123,9 @@
       background-color: #f2f2f2;
     }
 
+    .hidden {
+            display: none;
+        }
     
     </style>
 
@@ -134,8 +142,10 @@
         <button onclick="showOverall()">Overall</button>
         <button onclick="showWeekly()" id="weekly">Weekly</button>
         <button onclick="showRecentSubmissions()">Recent Submissions</button>
-        <button onclick="showContest()">Contest</button>
+        <button onclick="showContest()">Rating</button> 
+        <button onclick="showRecentContest()">Contest</button>
         <button onclick="showLeaderBoard()">LeaderBoard</button>
+       
         
     </div>
 
@@ -285,6 +295,85 @@
         </tbody>
     </table>
     
+    <table id="RecentContests" style="display: none;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Total Users</th>
+                <th>Standings</th>
+                <th class="hidden">Slug</th> <!-- Hidden heading for Slug -->
+            </tr>
+        </thead>
+        <tbody>
+            <% recentContests.forEach(function(contest, index) { %>
+                <tr id="contest-row-<%= index %>">
+                    <td><%= index + 1 %></td> <!-- Counting from 1 -->
+                    <td><%= contest.title %></td>
+                    <td><%= new Date(new Date(contest.startTime).getTime() + (5 * 60 * 60 + 30 * 60) * 1000).toLocaleString() %></td> <!-- Start Time + 5:30 -->
+                    <td><%= new Date(new Date(contest.endTime).getTime() + (5 * 60 * 60 + 30 * 60) * 1000).toLocaleString() %></td> <!-- End Time + 5:30 -->
+                    <td><%= contest.user_num_us + contest.user_num_cn %></td>
+                    <td>
+                        <a href="#" class="clickable" onclick="toggleContestTable('<%= contest.titleSlug %>', <%= index %>); return false;">
+                            Show Prediction
+                        </a>
+                    </td>
+                    
+                    <td class="hidden"><%= contest.titleSlug %></td> <!-- Hidden slug -->                    
+                </tr>
+                <!-- This row will be dynamically inserted -->
+                <tr id="contest-details-<%= index %>" style="display: none;">
+                    <td colspan="7" style="padding-top: 20px; padding-bottom: 20px;">
+                        <table class="contest-data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Username</th>
+                                    <th>Rank</th>
+                                    <th>Score</th>
+                                    <th>Old Rating</th>
+                                    <th>New Rating</th>
+                                    <th>Delta Rating</th>
+                                    <th>Finish Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contest-data-body-<%= index %>"></tbody>
+                                <!-- Data will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+    
+    <script>
+        let openContest = null;
+    
+        function toggleContestTable(titleSlug, index) {
+            const detailsRow = document.getElementById(`contest-details-${index}`);
+            
+            // Hide previous open table if any
+            if (openContest && openContest !== detailsRow) {
+                openContest.style.display = 'none';
+            }
+            
+            // Toggle the current table
+            if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+                detailsRow.style.display = 'table-row';
+                // Fetch and populate contest data here
+                particular_contest(titleSlug, index);
+            } else {
+                detailsRow.style.display = 'none';
+            }
+    
+            // Keep track of the currently open contest
+            openContest = detailsRow;
+        }
+    </script>
+    
 
     <div id="leaderboard_ss" style="display: none;">
 
@@ -399,7 +488,84 @@
 
 </script>
     
+
+
     <script>
+
+
+function particular_contest(id, index) {
+    const contestDatarray = JSON.parse('<%- JSON.stringify(contestDataArray) %>');
+    
+
+    const matchingContests = contestDatarray.filter(contest => contest.contest_name === id);
+    console.log(matchingContests);
+updateTable(matchingContests, index);
+   
+    
+}
+
+function calculateTimeDifference(startTime, finishTime) {
+        // Convert both startTime and finishTime to Date objects
+        const start = new Date(startTime);
+        const finish = new Date(finishTime);
+        
+        // Calculate the difference in milliseconds
+        const diff = finish - start;
+        
+        // Convert the difference to hours, minutes, and seconds
+        const hours = Math.floor(diff / (1000 * 60 * 60));  // Convert ms to hours
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));  // Convert remaining ms to minutes
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);  // Convert remaining ms to seconds
+
+        // Format as hh:mm:ss (without leading zeros for hours and minutes)
+        return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+function updateTable(contestData, index) {
+    
+   
+    const tableBody = document.getElementById(`contest-data-body-${index}`);
+    tableBody.innerHTML = '';  // Clear the existing table content
+
+    contestData.forEach((contest, index) => {
+        const row = document.createElement('tr');
+
+        // Calculate delta rating and verdict
+    const deltaRating = contest.new_rating - contest.old_rating;
+    const verdictClass = deltaRating >= 0 ? 'accepted' : 'rejected';
+
+    // Create the table data (td) elements
+    row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${contest.username}</td>
+        <td>${contest.rank}</td>
+        <td>${contest.score}</td>
+        <td>${contest.old_rating}</td>
+        <td>${contest.new_rating}</td>
+        <td>
+            <span class="verdict ${verdictClass}">
+                ${deltaRating}
+            </span>
+        </td>
+        <td>
+            ${contest.timeTaken}
+        </td>
+    `;
+
+        // Append the row to the table body
+        tableBody.appendChild(row);
+    });
+}
+
+        function showRecentContest() {
+            document.getElementById("leaderboard").style.display = "none";
+            document.getElementById("recentSubmissionsTable").style.display = "none";
+            document.getElementById("leaderboard_ss").style.display = "none";
+            document.getElementById("contestTable").style.display = "none";
+           
+            document.getElementById("RecentContests").style.display = "table";
+
+        }
         
         var userSolvedData = JSON.parse('<%- JSON.stringify(user_solved) %>');
     
@@ -416,6 +582,8 @@
             document.getElementById("recentSubmissionsTable").style.display = "none";
             document.getElementById("leaderboard_ss").style.display = "none";
             document.getElementById("contestTable").style.display = "none";
+          
+            document.getElementById("RecentContests").style.display = "none";
 
             var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             for (var i = 0; i < rows.length; i++) {
@@ -443,6 +611,8 @@
             document.getElementById("recentSubmissionsTable").style.display = "none";
             document.getElementById("leaderboard_ss").style.display = "none";
             document.getElementById("contestTable").style.display = "none";
+            
+            document.getElementById("RecentContests").style.display = "none";
 
     var rows = document.getElementById("leaderboard").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
     var modifiedUserSolvedData = []; 
@@ -516,6 +686,7 @@ function showRecentSubmissions() {
     document.getElementById("recentSubmissionsTable").style.display = "table";
     document.getElementById("leaderboard_ss").style.display = "none";
     document.getElementById("contestTable").style.display = "none";
+    document.getElementById("RecentContests").style.display = "none";
 }
 
 function showLeaderBoard() {
@@ -523,6 +694,7 @@ function showLeaderBoard() {
     document.getElementById("recentSubmissionsTable").style.display = "none";
     document.getElementById("leaderboard_ss").style.display = "block";
     document.getElementById("contestTable").style.display = "none";
+    document.getElementById("RecentContests").style.display = "none";
     
 }
 
@@ -531,6 +703,7 @@ function showContest() {
     document.getElementById("recentSubmissionsTable").style.display = "none";
     document.getElementById("leaderboard_ss").style.display = "none";
     document.getElementById("contestTable").style.display = "table";
+    document.getElementById("RecentContests").style.display = "none";
     
 }
 
