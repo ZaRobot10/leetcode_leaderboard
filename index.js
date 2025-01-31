@@ -200,7 +200,8 @@ var userNames = [
     { user: 'ananyak84', problems: [5, 1, 2, 2] },
     { user: 'harshghai', problems: [5, 1, 2, 2] },
     { user: 'madhurbakshi', problems: [5, 1, 2, 2]},
-    { user: 'Night_sky_delta', problems: [5, 1, 2, 2] }
+    { user: 'Night_sky_delta', problems: [5, 1, 2, 2] },
+    { user: 'BarsaatiLadka8', problems: [5, 1, 2, 2] }
     
 ];
 
