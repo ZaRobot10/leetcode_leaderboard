@@ -458,8 +458,13 @@ async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner
 async function updateProblemsAndDateInUserNames(userNames) {
 
     try {
-        
-        console.log("Connected to MongoDB");
+
+        // Connect if not already connected
+        if (!client.topology || !client.topology.isConnected()) {
+            await client.connect();
+            console.log("Connected to MongoDB");
+        }
+
     
         const database = client.db("leaderboard");
         const weeklyRecordsCollection = database.collection("weekly_records");
