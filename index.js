@@ -205,6 +205,52 @@ var userNames = [
     
 ];
 
+// Example usage
+const url = 'https://leetcode-leaderboard-2.onrender.com/'; // Replace with your website's URL
+const outputPath = 'weekly_standings_screenshot.png'; // Path to save the screenshot
+const repositoryOwner = 'ZaRobot10'; // Replace with your GitHub username or organization name
+const repositoryName = 'leetcode_leaderboard'; // Replace with your GitHub repository name
+const commitMessage = 'Add weekly standings screenshot'; // Commit message
+const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHub personal access token
+
+const client = new MongoClient(uri);
+await client.connect();
+const database = client.db("leaderboard");
+
+
+// Update the userNames array with the new data
+async function updateUsernamesFromDB() {
+    try {
+        await client.connect();
+        const database = client.db("leaderboard");
+        const dailySolvedCollection = database.collection("weekly_records");
+
+        // Fetch data from the collection
+        const dailySolvedUsers = await dailySolvedCollection.find({}).toArray();
+
+        // Convert to required format
+        const newUserNames = dailySolvedUsers.map(userDoc => ({
+            user: userDoc.user,
+            problems: userDoc.problems
+        }));
+
+        // Only replace if newUserNames is not empty
+        if (newUserNames.length > 0) {
+            userNames = newUserNames;
+            console.log("Usernames array updated successfully.");
+        } else {
+            console.log("No new data found. Usernames array not updated.");
+        }
+
+    } catch (error) {
+        console.error("Error while fetching usernames from DB:", error);
+    } finally {
+        await client.close();
+    }
+}
+
+await updateUsernamesFromDB();
+
 
 async function fetchContests() {
     try {
@@ -408,17 +454,6 @@ async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner
 }
 
 
-// Example usage
-const url = 'https://leetcode-leaderboard-2.onrender.com/'; // Replace with your website's URL
-const outputPath = 'weekly_standings_screenshot.png'; // Path to save the screenshot
-const repositoryOwner = 'ZaRobot10'; // Replace with your GitHub username or organization name
-const repositoryName = 'leetcode_leaderboard'; // Replace with your GitHub repository name
-const commitMessage = 'Add weekly standings screenshot'; // Commit message
-const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHub personal access token
-
-const client = new MongoClient(uri);
-await client.connect();
-const database = client.db("leaderboard");
 
 async function updateProblemsAndDateInUserNames(userNames) {
 
