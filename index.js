@@ -214,14 +214,16 @@ const commitMessage = 'Add weekly standings screenshot'; // Commit message
 const accessToken =  process.env.GITHUB_ACCESS_TOKEN; // Replace with your GitHub personal access token
 
 const client = new MongoClient(uri);
-await client.connect();
-const database = client.db("leaderboard");
 
-
-// Update the userNames array with the new data
+// Update the userNames array with the new data - MUST BE FIRST OPERATION
 async function updateUsernamesFromDB() {
     try {
-        await client.connect();
+        // Connect to MongoDB if not already connected
+        if (!client.topology || !client.topology.isConnected()) {
+            await client.connect();
+            console.log("Connected to MongoDB for userNames update");
+        }
+        
         const database = client.db("leaderboard");
         const dailySolvedCollection = database.collection("weekly_records");
 
@@ -238,18 +240,22 @@ async function updateUsernamesFromDB() {
         if (newUserNames.length > 0) {
             userNames = newUserNames;
             console.log("Usernames array updated successfully.");
+            console.log(`Total users loaded: ${userNames.length}`);
         } else {
             console.log("No new data found. Usernames array not updated.");
         }
 
     } catch (error) {
         console.error("Error while fetching usernames from DB:", error);
-    } finally {
-        await client.close();
     }
+    // DON'T CLOSE CLIENT - keep it open for other operations
 }
 
+// CRITICAL: Update userNames FIRST before any other operations
 await updateUsernamesFromDB();
+
+// Now establish the database connection for other operations
+const database = client.db("leaderboard");
 
 
 async function fetchContests() {
@@ -458,14 +464,7 @@ async function captureScreenshotAndPushToGitHub(url, outputPath, repositoryOwner
 async function updateProblemsAndDateInUserNames(userNames) {
 
     try {
-
-        // Connect if not already connected
-        if (!client.topology || !client.topology.isConnected()) {
-            await client.connect();
-            console.log("Connected to MongoDB");
-        }
-
-    
+        // Client is already connected from the initial setup
         const database = client.db("leaderboard");
         const weeklyRecordsCollection = database.collection("weekly_records");
 
@@ -698,10 +697,8 @@ app.get('/', async (req, res) => {
 // Function to empty the daily_solved table and fill it with data from the array
 async function updateDailySolvedTable() {
     
-
     try {
-        
-
+        // Use the existing client connection
         const database = client.db('leaderboard');
         const dailySolvedCollection = database.collection('daily_solved');
 
@@ -791,6 +788,46 @@ catch (err)
 app.listen(port, () => {
 
     console.log(`Server is running on port http://localhost:${port}`);
+});
+
+// Add refresh endpoint to update userNames array without restarting server
+app.post('/refresh-users', async (req, res) => {
+    try {
+        console.log('Refreshing user data from database...');
+        
+        // Update userNames array from database
+        await updateUsernamesFromDB();
+        
+        // Also clear and refresh daily_solved array
+        daily_solved.length = 0;
+        const database = client.db("leaderboard");
+        const daily_solved_collection = database.collection("daily_solved");
+        const cursor = daily_solved_collection.find({});
+        
+        await cursor.forEach(doc => {
+            daily_solved.push({
+                user: doc.user,
+                daily_solved: doc.daily_solved
+            });
+        });
+        
+        // Also refresh contest data
+        contest.length = 0;
+        await getAllUsersContestRecords();
+        
+        res.json({ 
+            success: true, 
+            message: 'User data refreshed successfully',
+            userCount: userNames.length 
+        });
+        
+    } catch (error) {
+        console.error('Error refreshing user data:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
 });
 
 // await performLogin();
